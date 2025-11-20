@@ -23,7 +23,7 @@ export class NamespaceOperations {
 
     const response = await this.client.request<ListNamespacesResponse>({
       method: 'GET',
-      path: `${this.prefix}/v1/namespaces`,
+      path: `${this.prefix}/namespaces`,
       query,
     })
 
@@ -41,7 +41,7 @@ export class NamespaceOperations {
 
     const response = await this.client.request<CreateNamespaceResponse>({
       method: 'POST',
-      path: `${this.prefix}/v1/namespaces`,
+      path: `${this.prefix}/namespaces`,
       body: request,
     })
 
@@ -51,14 +51,14 @@ export class NamespaceOperations {
   async dropNamespace(id: NamespaceIdentifier): Promise<void> {
     await this.client.request<void>({
       method: 'DELETE',
-      path: `${this.prefix}/v1/namespaces/${namespaceToPath(id.namespace)}`,
+      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}`,
     })
   }
 
   async loadNamespaceMetadata(id: NamespaceIdentifier): Promise<NamespaceMetadata> {
     const response = await this.client.request<GetNamespaceResponse>({
       method: 'GET',
-      path: `${this.prefix}/v1/namespaces/${namespaceToPath(id.namespace)}`,
+      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}`,
     })
 
     return {

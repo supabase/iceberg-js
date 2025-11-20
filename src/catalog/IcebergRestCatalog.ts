@@ -80,7 +80,10 @@ export class IcebergRestCatalog {
    * @param options - Configuration options for the catalog client
    */
   constructor(options: IcebergRestCatalogOptions) {
-    const prefix = options.catalogName ? `/${options.catalogName}` : ''
+    let prefix = 'v1'
+    if (options.catalogName) {
+      prefix += `/${options.catalogName}`
+    }
 
     this.client = createFetchClient({
       baseUrl: options.baseUrl,
