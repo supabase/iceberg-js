@@ -81,7 +81,10 @@ async function main() {
 
     // List all tables in the namespace
     const tables = await catalog.listTables({ namespace: ['default'] })
-    console.log('✓ Tables in default namespace:', tables.map((t) => t.name))
+    console.log(
+      '✓ Tables in default namespace:',
+      tables.map((t) => t.name)
+    )
 
     // Load the table metadata
     const loadedTable = await catalog.loadTable({

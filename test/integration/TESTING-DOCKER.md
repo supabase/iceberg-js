@@ -18,6 +18,7 @@ pnpm test:integration
 ```
 
 This will:
+
 - Start Docker services (Iceberg REST Catalog + MinIO)
 - Wait for services to be ready
 - Run the integration test
@@ -48,6 +49,7 @@ docker compose down -v
 ```
 
 This starts:
+
 - **Iceberg REST Catalog** on `http://localhost:8181`
 - **MinIO** (S3-compatible storage) on `http://localhost:9000` (API) and `http://localhost:9001` (Console)
 
@@ -74,16 +76,18 @@ docker compose down -v
 ## Troubleshooting
 
 ### Port already in use
+
 If port 8181 or 9000 is already taken, edit `docker-compose.yml` and change the ports:
 
 ```yaml
 ports:
-  - "8182:8181"  # Use 8182 instead of 8181
+  - '8182:8181' # Use 8182 instead of 8181
 ```
 
 Then update `test/integration/test-local-catalog.ts` to use the new port.
 
 ### Catalog not responding
+
 Wait a few seconds after `docker-compose up` for the services to fully start:
 
 ```bash

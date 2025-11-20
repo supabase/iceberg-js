@@ -115,6 +115,7 @@ const metadata = await catalog.loadTable({ namespace: ['analytics'], name: 'even
 ```
 
 Supported delegation mechanisms:
+
 - `vended-credentials`: Server provides temporary credentials (e.g., AWS STS tokens) for accessing table data
 - `remote-signing`: Server signs data access requests on behalf of the client
 
@@ -382,6 +383,7 @@ This project uses [release-please](https://github.com/googleapis/release-please)
    - Automatically publish to npm with provenance (using trusted publishing, no secrets needed)
 
 **Example commits:**
+
 ```bash
 git commit -m "feat: add support for view operations"
 git commit -m "fix: handle empty namespace list correctly"

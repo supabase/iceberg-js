@@ -39,7 +39,10 @@ describe('NamespaceOperations', () => {
         status: 200,
         headers: new Headers(),
         data: {
-          namespaces: [['analytics', 'prod'], ['analytics', 'dev']],
+          namespaces: [
+            ['analytics', 'prod'],
+            ['analytics', 'dev'],
+          ],
         },
       })
 
