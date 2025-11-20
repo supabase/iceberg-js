@@ -12,6 +12,14 @@ import type {
 } from './types'
 
 /**
+ * Access delegation mechanisms supported by the Iceberg REST Catalog.
+ *
+ * - `vended-credentials`: Server provides temporary credentials for data access
+ * - `remote-signing`: Server signs requests on behalf of the client
+ */
+export type AccessDelegation = 'vended-credentials' | 'remote-signing'
+
+/**
  * Configuration options for the Iceberg REST Catalog client.
  */
 export interface IcebergRestCatalogOptions {
@@ -23,6 +31,15 @@ export interface IcebergRestCatalogOptions {
   auth?: AuthConfig
   /** Custom fetch implementation (defaults to globalThis.fetch) */
   fetch?: typeof fetch
+  /**
+   * Access delegation mechanisms to request from the server.
+   * When specified, the X-Iceberg-Access-Delegation header will be sent
+   * with supported operations (createTable, loadTable).
+   *
+   * @example ['vended-credentials']
+   * @example ['vended-credentials', 'remote-signing']
+   */
+  accessDelegation?: AccessDelegation[]
 }
 
 /**
@@ -55,6 +72,7 @@ export class IcebergRestCatalog {
   private readonly client: HttpClient
   private readonly namespaceOps: NamespaceOperations
   private readonly tableOps: TableOperations
+  private readonly accessDelegation?: string
 
   /**
    * Creates a new Iceberg REST Catalog client.
@@ -70,8 +88,11 @@ export class IcebergRestCatalog {
       fetchImpl: options.fetch,
     })
 
+    // Format accessDelegation as comma-separated string per spec
+    this.accessDelegation = options.accessDelegation?.join(',')
+
     this.namespaceOps = new NamespaceOperations(this.client, prefix)
-    this.tableOps = new TableOperations(this.client, prefix)
+    this.tableOps = new TableOperations(this.client, prefix, this.accessDelegation)
   }
 
   /**

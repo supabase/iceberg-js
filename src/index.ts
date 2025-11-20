@@ -1,5 +1,5 @@
 export { IcebergRestCatalog } from './catalog/IcebergRestCatalog'
-export type { IcebergRestCatalogOptions } from './catalog/IcebergRestCatalog'
+export type { IcebergRestCatalogOptions, AccessDelegation } from './catalog/IcebergRestCatalog'
 
 export type {
   NamespaceIdentifier,

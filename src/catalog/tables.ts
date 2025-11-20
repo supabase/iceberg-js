@@ -16,7 +16,8 @@ function namespaceToPath(namespace: string[]): string {
 export class TableOperations {
   constructor(
     private readonly client: HttpClient,
-    private readonly prefix: string = ''
+    private readonly prefix: string = '',
+    private readonly accessDelegation?: string
   ) {}
 
   async listTables(namespace: NamespaceIdentifier): Promise<TableIdentifier[]> {
@@ -32,10 +33,16 @@ export class TableOperations {
     namespace: NamespaceIdentifier,
     request: CreateTableRequest
   ): Promise<TableMetadata> {
+    const headers: Record<string, string> = {}
+    if (this.accessDelegation) {
+      headers['X-Iceberg-Access-Delegation'] = this.accessDelegation
+    }
+
     const response = await this.client.request<LoadTableResponse>({
       method: 'POST',
       path: `${this.prefix}/v1/namespaces/${namespaceToPath(namespace.namespace)}/tables`,
       body: request,
+      headers,
     })
 
     return response.data.metadata
@@ -59,9 +66,15 @@ export class TableOperations {
   }
 
   async loadTable(id: TableIdentifier): Promise<TableMetadata> {
+    const headers: Record<string, string> = {}
+    if (this.accessDelegation) {
+      headers['X-Iceberg-Access-Delegation'] = this.accessDelegation
+    }
+
     const response = await this.client.request<LoadTableResponse>({
       method: 'GET',
       path: `${this.prefix}/v1/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      headers,
     })
 
     return response.data.metadata

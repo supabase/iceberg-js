@@ -8,7 +8,7 @@ A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceber
 - **Minimal**: Thin HTTP wrapper over the official REST API, no engine-specific logic
 - **Type-safe**: First-class TypeScript support with strongly-typed request/response models
 - **Fetch-based**: Uses native `fetch` API with support for custom implementations
-- **Universal**: Targets Node 18+ and modern browsers (ES2020)
+- **Universal**: Targets Node 20+ and modern browsers (ES2020)
 - **Catalog-only**: Focused on catalog operations (no data reading/Parquet support in v0.1.0)
 
 ## Installation
@@ -77,6 +77,7 @@ Creates a new catalog client instance.
 - `auth` (AuthConfig, optional): Authentication configuration
 - `catalogName` (string, optional): Catalog name prefix for multi-catalog servers
 - `fetch` (typeof fetch, optional): Custom fetch implementation
+- `accessDelegation` (AccessDelegation[], optional): Access delegation mechanisms to request from the server
 
 **Authentication types:**
 
@@ -93,6 +94,29 @@ Creates a new catalog client instance.
 // Custom function
 { type: 'custom', getHeaders: async () => ({ 'Authorization': 'Bearer ...' }) }
 ```
+
+**Access Delegation:**
+
+Access delegation allows the catalog server to provide temporary credentials or sign requests on your behalf:
+
+```typescript
+import { IcebergRestCatalog } from 'iceberg-js'
+
+const catalog = new IcebergRestCatalog({
+  baseUrl: 'https://catalog.example.com/iceberg/v1',
+  auth: { type: 'bearer', token: 'your-token' },
+  // Request vended credentials for data access
+  accessDelegation: ['vended-credentials'],
+})
+
+// The server may return temporary credentials in the table metadata
+const metadata = await catalog.loadTable({ namespace: ['analytics'], name: 'events' })
+// Use credentials from metadata.config to access table data files
+```
+
+Supported delegation mechanisms:
+- `vended-credentials`: Server provides temporary credentials (e.g., AWS STS tokens) for accessing table data
+- `remote-signing`: Server signs data access requests on behalf of the client
 
 ### Namespace Operations
 
@@ -242,6 +266,7 @@ import type {
   CreateTableRequest,
   TableMetadata,
   AuthConfig,
+  AccessDelegation,
 } from 'iceberg-js'
 ```
 

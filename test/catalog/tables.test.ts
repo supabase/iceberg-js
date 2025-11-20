@@ -138,6 +138,7 @@ describe('TableOperations', () => {
           name: 'events',
           schema: expect.any(Object),
         }),
+        headers: {},
       })
     })
 
@@ -189,6 +190,7 @@ describe('TableOperations', () => {
             ],
           },
         }),
+        headers: {},
       })
     })
 
@@ -226,6 +228,7 @@ describe('TableOperations', () => {
             'write.parquet.compression-codec': 'snappy',
           },
         }),
+        headers: {},
       })
     })
   })
@@ -248,6 +251,7 @@ describe('TableOperations', () => {
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
         path: '/v1/namespaces/analytics/tables/events',
+        headers: {},
       })
     })
 
@@ -265,6 +269,7 @@ describe('TableOperations', () => {
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
         path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+        headers: {},
       })
     })
   })
@@ -364,6 +369,88 @@ describe('TableOperations', () => {
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
         path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+      })
+    })
+  })
+
+  describe('accessDelegation', () => {
+    it('should include X-Iceberg-Access-Delegation header when creating table', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient, '', 'vended-credentials')
+      await ops.createTable(
+        { namespace: ['analytics'] },
+        {
+          name: 'events',
+          schema: {
+            type: 'struct',
+            fields: [{ id: 1, name: 'id', type: 'long', required: true }],
+            'schema-id': 0,
+          },
+        }
+      )
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces/analytics/tables',
+        body: expect.any(Object),
+        headers: {
+          'X-Iceberg-Access-Delegation': 'vended-credentials',
+        },
+      })
+    })
+
+    it('should include X-Iceberg-Access-Delegation header when loading table', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient, '', 'vended-credentials,remote-signing')
+      await ops.loadTable({ namespace: ['analytics'], name: 'events' })
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'GET',
+        path: '/v1/namespaces/analytics/tables/events',
+        headers: {
+          'X-Iceberg-Access-Delegation': 'vended-credentials,remote-signing',
+        },
+      })
+    })
+
+    it('should not include header when accessDelegation is not set', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient)
+      await ops.createTable(
+        { namespace: ['analytics'] },
+        {
+          name: 'events',
+          schema: {
+            type: 'struct',
+            fields: [{ id: 1, name: 'id', type: 'long', required: true }],
+            'schema-id': 0,
+          },
+        }
+      )
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces/analytics/tables',
+        body: expect.any(Object),
+        headers: {},
       })
     })
   })
