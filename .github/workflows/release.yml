@@ -27,7 +27,6 @@ jobs:
         with:
           version: 9
 
-      # 🔥 MUST use v5 to get npm 11.6+ which fixes the provenance/404 issue
       - uses: actions/setup-node@v5
         if: ${{ steps.release.outputs.release_created }}
         with:
@@ -42,7 +41,7 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         run: pnpm build
 
-      # 🔥 Use npm for publish (pnpm cannot handle trusted publishing reliably)
+      # Use npm for publish (pnpm cannot handle trusted publishing reliably)
       - name: Publish to npm (trusted publishing)
         if: ${{ steps.release.outputs.release_created }}
         run: npm publish --access public --provenance
