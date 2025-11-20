@@ -175,8 +175,8 @@ export class IcebergRestCatalog {
    *     schema: {
    *       type: 'struct',
    *       fields: [
-   *         { id: 1, name: 'id', type: { type: 'long' }, required: true },
-   *         { id: 2, name: 'timestamp', type: { type: 'timestamp' }, required: true }
+   *         { id: 1, name: 'id', type: 'long', required: true },
+   *         { id: 2, name: 'timestamp', type: 'timestamp', required: true }
    *       ],
    *       'schema-id': 0
    *     },

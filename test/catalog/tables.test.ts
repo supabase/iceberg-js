@@ -10,22 +10,29 @@ describe('TableOperations', () => {
   const mockTableMetadata = {
     name: 'events',
     location: 's3://bucket/warehouse/analytics/events',
-    schema: {
-      type: 'struct' as const,
-      fields: [
-        { id: 1, name: 'id', type: { type: 'long' as const }, required: true },
-        { id: 2, name: 'timestamp', type: { type: 'timestamp' as const }, required: true },
-      ],
-      'schema-id': 0,
-    },
-    'partition-spec': {
-      'spec-id': 0,
-      fields: [],
-    },
-    'write-order': {
-      'order-id': 0,
-      fields: [],
-    },
+    'current-schema-id': 0,
+    schemas: [
+      {
+        type: 'struct' as const,
+        fields: [
+          { id: 1, name: 'id', type: 'long', required: true },
+          { id: 2, name: 'timestamp', type: 'timestamp', required: true },
+        ],
+        'schema-id': 0,
+      },
+    ],
+    'partition-specs': [
+      {
+        'spec-id': 0,
+        fields: [],
+      },
+    ],
+    'sort-orders': [
+      {
+        'order-id': 0,
+        fields: [],
+      },
+    ],
     properties: {},
     'metadata-location': 's3://bucket/warehouse/analytics/events/metadata/v1.json',
   }
@@ -111,8 +118,8 @@ describe('TableOperations', () => {
           schema: {
             type: 'struct',
             fields: [
-              { id: 1, name: 'id', type: { type: 'long' }, required: true },
-              { id: 2, name: 'timestamp', type: { type: 'timestamp' }, required: true },
+              { id: 1, name: 'id', type: 'long', required: true },
+              { id: 2, name: 'timestamp', type: 'timestamp', required: true },
             ],
             'schema-id': 0,
           },
@@ -149,7 +156,7 @@ describe('TableOperations', () => {
           name: 'events',
           schema: {
             type: 'struct',
-            fields: [{ id: 1, name: 'id', type: { type: 'long' }, required: true }],
+            fields: [{ id: 1, name: 'id', type: 'long', required: true }],
             'schema-id': 0,
           },
           'partition-spec': {
@@ -304,9 +311,9 @@ describe('TableOperations', () => {
           schema: {
             type: 'struct',
             fields: [
-              { id: 1, name: 'id', type: { type: 'long' }, required: true },
-              { id: 2, name: 'timestamp', type: { type: 'timestamp' }, required: true },
-              { id: 3, name: 'user_id', type: { type: 'string' }, required: false },
+              { id: 1, name: 'id', type: 'long', required: true },
+              { id: 2, name: 'timestamp', type: 'timestamp', required: true },
+              { id: 3, name: 'user_id', type: 'string', required: false },
             ],
             'schema-id': 1,
           },

@@ -1,4 +1,4 @@
-import { IcebergRestCatalog } from '../src/index'
+import { IcebergRestCatalog, getCurrentSchema } from '../src/index'
 
 async function main() {
   const catalog = new IcebergRestCatalog({
@@ -32,9 +32,9 @@ async function main() {
         schema: {
           type: 'struct',
           fields: [
-            { id: 1, name: 'id', type: { type: 'long' }, required: true },
-            { id: 2, name: 'timestamp', type: { type: 'timestamp' }, required: true },
-            { id: 3, name: 'user_id', type: { type: 'string' }, required: false },
+            { id: 1, name: 'id', type: 'long', required: true },
+            { id: 2, name: 'timestamp', type: 'timestamp', required: true },
+            { id: 3, name: 'user_id', type: 'string', required: false },
           ],
           'schema-id': 0,
           'identifier-field-ids': [1],
@@ -67,7 +67,11 @@ async function main() {
       namespace: ['analytics'],
       name: 'events',
     })
-    console.log('Loaded table:', loadedTable.name)
+    console.log('Loaded table location:', loadedTable.location)
+
+    // Get the current schema
+    const schema = getCurrentSchema(loadedTable)
+    console.log('Current schema:', schema)
   } catch (error) {
     console.error('Error:', error)
   }

@@ -24,6 +24,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest watch",
+    "test:integration": "bash scripts/test-integration.sh",
+    "test:integration:ci": "bash scripts/test-integration.sh --cleanup",
     "check": "pnpm lint && pnpm type-check && pnpm test && pnpm build"
   },
   "keywords": [

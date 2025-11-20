@@ -12,18 +12,18 @@ export interface TableIdentifier {
 }
 
 export type IcebergType =
-  | { type: 'boolean' }
-  | { type: 'int' }
-  | { type: 'long' }
-  | { type: 'float' }
-  | { type: 'double' }
-  | { type: 'string' }
-  | { type: 'timestamp' }
-  | { type: 'date' }
-  | { type: 'time' }
-  | { type: 'timestamptz' }
-  | { type: 'uuid' }
-  | { type: 'binary' }
+  | 'boolean'
+  | 'int'
+  | 'long'
+  | 'float'
+  | 'double'
+  | 'string'
+  | 'timestamp'
+  | 'date'
+  | 'time'
+  | 'timestamptz'
+  | 'uuid'
+  | 'binary'
   | { type: 'decimal'; precision: number; scale: number }
   | { type: 'fixed'; length: number }
 
@@ -82,26 +82,27 @@ export interface UpdateTableRequest {
 }
 
 export interface TableMetadata {
-  name: string
+  name?: string
   location: string
-  schema: TableSchema
-  'partition-spec': PartitionSpec
-  'write-order': SortOrder
+  schemas: TableSchema[]
+  'current-schema-id': number
+  'partition-specs': PartitionSpec[]
+  'default-spec-id'?: number
+  'sort-orders': SortOrder[]
+  'default-sort-order-id'?: number
   properties: Record<string, string>
-  'metadata-location': string
+  'metadata-location'?: string
   'current-snapshot-id'?: number
   snapshots?: unknown[]
   'snapshot-log'?: unknown[]
   'metadata-log'?: unknown[]
-  'sort-orders'?: SortOrder[]
   refs?: Record<string, unknown>
-  'current-schema-id'?: number
-  schemas?: TableSchema[]
-  'partition-specs'?: PartitionSpec[]
   'last-updated-ms'?: number
   'last-column-id'?: number
+  'last-sequence-number'?: number
   'table-uuid'?: string
   'format-version'?: number
+  'last-partition-id'?: number
 }
 
 export interface CreateNamespaceRequest {
@@ -133,4 +134,14 @@ export interface LoadTableResponse {
   'metadata-location': string
   metadata: TableMetadata
   config?: Record<string, string>
+}
+
+/**
+ * Gets the current (active) schema from table metadata.
+ *
+ * @param metadata - Table metadata containing schemas array and current-schema-id
+ * @returns The current table schema, or undefined if not found
+ */
+export function getCurrentSchema(metadata: TableMetadata): TableSchema | undefined {
+  return metadata.schemas.find((s) => s['schema-id'] === metadata['current-schema-id'])
 }

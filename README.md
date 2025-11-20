@@ -41,9 +41,9 @@ await catalog.createTable(
     schema: {
       type: 'struct',
       fields: [
-        { id: 1, name: 'id', type: { type: 'long' }, required: true },
-        { id: 2, name: 'timestamp', type: { type: 'timestamp' }, required: true },
-        { id: 3, name: 'user_id', type: { type: 'string' }, required: false },
+        { id: 1, name: 'id', type: 'long', required: true },
+        { id: 2, name: 'timestamp', type: 'timestamp', required: true },
+        { id: 3, name: 'user_id', type: 'string', required: false },
       ],
       'schema-id': 0,
       'identifier-field-ids': [1],
@@ -156,8 +156,8 @@ const metadata = await catalog.createTable(
     schema: {
       type: 'struct',
       fields: [
-        { id: 1, name: 'id', type: { type: 'long' }, required: true },
-        { id: 2, name: 'timestamp', type: { type: 'timestamp' }, required: true },
+        { id: 1, name: 'id', type: 'long', required: true },
+        { id: 2, name: 'timestamp', type: 'timestamp', required: true },
       ],
       'schema-id': 0,
     },
@@ -271,7 +271,7 @@ const namespaces = await catalog.listNamespaces()
 
 ## Node.js Usage
 
-Node.js 18+ includes native `fetch` support. For older versions, provide a custom fetch implementation:
+Node.js 20+ includes native `fetch` support. For older versions, provide a custom fetch implementation:
 
 ```typescript
 import { IcebergRestCatalog } from 'iceberg-js'
@@ -303,14 +303,34 @@ pnpm install
 # Build the library
 pnpm run build
 
-# Run tests
+# Run unit tests
 pnpm test
+
+# Run integration tests (requires Docker)
+pnpm test:integration
+
+# Run integration tests with cleanup (for CI)
+pnpm test:integration:ci
 
 # Format code
 pnpm run format
 
 # Lint and test
 pnpm run check
+```
+
+### Testing with Docker
+
+Integration tests run against a local Iceberg REST Catalog in Docker. See [TESTING-DOCKER.md](./test/integration/TESTING-DOCKER.md) for details.
+
+```bash
+# Start Docker services and run integration tests
+pnpm test:integration
+
+# Or manually
+docker compose up -d
+npx tsx test/integration/test-local-catalog.ts
+docker compose down -v
 ```
 
 ## License

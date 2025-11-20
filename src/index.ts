@@ -17,6 +17,8 @@ export type {
   TableMetadata,
 } from './catalog/types'
 
+export { getCurrentSchema } from './catalog/types'
+
 export type { AuthConfig } from './http/types'
 
 export { IcebergError } from './errors/IcebergError'
