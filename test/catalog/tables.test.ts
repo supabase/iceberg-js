@@ -1,0 +1,363 @@
+import { describe, it, expect, vi } from 'vitest'
+import { TableOperations } from '../../src/catalog/tables'
+import type { HttpClient } from '../../src/http/types'
+
+describe('TableOperations', () => {
+  const createMockClient = (): HttpClient => ({
+    request: vi.fn(),
+  })
+
+  const mockTableMetadata = {
+    name: 'events',
+    location: 's3://bucket/warehouse/analytics/events',
+    schema: {
+      type: 'struct' as const,
+      fields: [
+        { id: 1, name: 'id', type: { type: 'long' as const }, required: true },
+        { id: 2, name: 'timestamp', type: { type: 'timestamp' as const }, required: true },
+      ],
+      'schema-id': 0,
+    },
+    'partition-spec': {
+      'spec-id': 0,
+      fields: [],
+    },
+    'write-order': {
+      'order-id': 0,
+      fields: [],
+    },
+    properties: {},
+    'metadata-location': 's3://bucket/warehouse/analytics/events/metadata/v1.json',
+  }
+
+  describe('listTables', () => {
+    it('should list tables in a namespace', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: {
+          identifiers: [
+            { namespace: ['analytics'], name: 'events' },
+            { namespace: ['analytics'], name: 'users' },
+          ],
+        },
+      })
+
+      const ops = new TableOperations(mockClient)
+      const result = await ops.listTables({ namespace: ['analytics'] })
+
+      expect(result).toEqual([
+        { namespace: ['analytics'], name: 'events' },
+        { namespace: ['analytics'], name: 'users' },
+      ])
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'GET',
+        path: '/v1/namespaces/analytics/tables',
+      })
+    })
+
+    it('should list tables in multipart namespace', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { identifiers: [] },
+      })
+
+      const ops = new TableOperations(mockClient)
+      await ops.listTables({ namespace: ['analytics', 'prod'] })
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'GET',
+        path: '/v1/namespaces/analytics\x1Fprod/tables',
+      })
+    })
+
+    it('should use prefix when provided', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { identifiers: [] },
+      })
+
+      const ops = new TableOperations(mockClient, '/catalog1')
+      await ops.listTables({ namespace: ['analytics'] })
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'GET',
+        path: '/catalog1/v1/namespaces/analytics/tables',
+      })
+    })
+  })
+
+  describe('createTable', () => {
+    it('should create a table', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: {
+          metadata: mockTableMetadata,
+        },
+      })
+
+      const ops = new TableOperations(mockClient)
+      const result = await ops.createTable(
+        { namespace: ['analytics'] },
+        {
+          name: 'events',
+          schema: {
+            type: 'struct',
+            fields: [
+              { id: 1, name: 'id', type: { type: 'long' }, required: true },
+              { id: 2, name: 'timestamp', type: { type: 'timestamp' }, required: true },
+            ],
+            'schema-id': 0,
+          },
+          'partition-spec': {
+            'spec-id': 0,
+            fields: [],
+          },
+        }
+      )
+
+      expect(result).toEqual(mockTableMetadata)
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces/analytics/tables',
+        body: expect.objectContaining({
+          name: 'events',
+          schema: expect.any(Object),
+        }),
+      })
+    })
+
+    it('should create table with partition spec', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient)
+      await ops.createTable(
+        { namespace: ['analytics'] },
+        {
+          name: 'events',
+          schema: {
+            type: 'struct',
+            fields: [{ id: 1, name: 'id', type: { type: 'long' }, required: true }],
+            'schema-id': 0,
+          },
+          'partition-spec': {
+            'spec-id': 0,
+            fields: [
+              {
+                source_id: 2,
+                field_id: 1000,
+                name: 'ts_day',
+                transform: 'day',
+              },
+            ],
+          },
+        }
+      )
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces/analytics/tables',
+        body: expect.objectContaining({
+          'partition-spec': {
+            'spec-id': 0,
+            fields: [
+              {
+                source_id: 2,
+                field_id: 1000,
+                name: 'ts_day',
+                transform: 'day',
+              },
+            ],
+          },
+        }),
+      })
+    })
+
+    it('should create table with properties', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient)
+      await ops.createTable(
+        { namespace: ['analytics'] },
+        {
+          name: 'events',
+          schema: {
+            type: 'struct',
+            fields: [],
+            'schema-id': 0,
+          },
+          properties: {
+            'write.format.default': 'parquet',
+            'write.parquet.compression-codec': 'snappy',
+          },
+        }
+      )
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces/analytics/tables',
+        body: expect.objectContaining({
+          properties: {
+            'write.format.default': 'parquet',
+            'write.parquet.compression-codec': 'snappy',
+          },
+        }),
+      })
+    })
+  })
+
+  describe('loadTable', () => {
+    it('should load a table', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: {
+          metadata: mockTableMetadata,
+        },
+      })
+
+      const ops = new TableOperations(mockClient)
+      const result = await ops.loadTable({ namespace: ['analytics'], name: 'events' })
+
+      expect(result).toEqual(mockTableMetadata)
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'GET',
+        path: '/v1/namespaces/analytics/tables/events',
+      })
+    })
+
+    it('should load table from multipart namespace', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient)
+      await ops.loadTable({ namespace: ['analytics', 'prod'], name: 'events' })
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'GET',
+        path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+      })
+    })
+  })
+
+  describe('updateTable', () => {
+    it('should update table properties', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient)
+      const result = await ops.updateTable(
+        { namespace: ['analytics'], name: 'events' },
+        {
+          properties: { 'read.split.target-size': '134217728' },
+        }
+      )
+
+      expect(result).toEqual(mockTableMetadata)
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces/analytics/tables/events',
+        body: {
+          properties: { 'read.split.target-size': '134217728' },
+        },
+      })
+    })
+
+    it('should update table schema', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient)
+      await ops.updateTable(
+        { namespace: ['analytics'], name: 'events' },
+        {
+          schema: {
+            type: 'struct',
+            fields: [
+              { id: 1, name: 'id', type: { type: 'long' }, required: true },
+              { id: 2, name: 'timestamp', type: { type: 'timestamp' }, required: true },
+              { id: 3, name: 'user_id', type: { type: 'string' }, required: false },
+            ],
+            'schema-id': 1,
+          },
+        }
+      )
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces/analytics/tables/events',
+        body: expect.objectContaining({
+          schema: expect.objectContaining({
+            'schema-id': 1,
+          }),
+        }),
+      })
+    })
+  })
+
+  describe('dropTable', () => {
+    it('should drop a table', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 204,
+        headers: new Headers(),
+        data: undefined,
+      })
+
+      const ops = new TableOperations(mockClient)
+      await ops.dropTable({ namespace: ['analytics'], name: 'events' })
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'DELETE',
+        path: '/v1/namespaces/analytics/tables/events',
+      })
+    })
+
+    it('should drop table from multipart namespace', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 204,
+        headers: new Headers(),
+        data: undefined,
+      })
+
+      const ops = new TableOperations(mockClient)
+      await ops.dropTable({ namespace: ['analytics', 'prod'], name: 'events' })
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'DELETE',
+        path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+      })
+    })
+  })
+})
