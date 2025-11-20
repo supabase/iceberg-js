@@ -52,7 +52,7 @@ export function createFetchClient(options: {
 
       const text = await res.text()
       const isJson = (res.headers.get('content-type') || '').includes('application/json')
-      const data = isJson && text ? JSON.parse(text) : (text as any)
+      const data = isJson && text ? (JSON.parse(text) as T) : (text as T)
 
       if (!res.ok) {
         const errBody = isJson ? (data as IcebergErrorResponse) : undefined

@@ -5,9 +5,8 @@ dist/
 coverage/
 .env
 .env.local
+tmp/
 
 CLAUDE.md
 WARP.md
-instructions.md
-rest-catalog-open-api.yaml
 .claude/

@@ -13,7 +13,7 @@ describe('createFetchClient', () => {
 
     const client = createFetchClient({
       baseUrl: 'https://example.com',
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     const response = await client.request({
@@ -41,7 +41,7 @@ describe('createFetchClient', () => {
 
     const client = createFetchClient({
       baseUrl: 'https://example.com',
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     const response = await client.request({
@@ -75,7 +75,7 @@ describe('createFetchClient', () => {
     const client = createFetchClient({
       baseUrl: 'https://example.com',
       auth: { type: 'bearer', token: 'secret-token' },
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     await client.request({
@@ -104,7 +104,7 @@ describe('createFetchClient', () => {
     const client = createFetchClient({
       baseUrl: 'https://example.com',
       auth: { type: 'header', name: 'X-API-Key', value: 'my-key' },
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     await client.request({
@@ -136,7 +136,7 @@ describe('createFetchClient', () => {
         type: 'custom',
         getHeaders: async () => ({ 'X-Custom': 'value' }),
       },
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     await client.request({
@@ -164,7 +164,7 @@ describe('createFetchClient', () => {
 
     const client = createFetchClient({
       baseUrl: 'https://example.com',
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     await client.request({
@@ -189,7 +189,7 @@ describe('createFetchClient', () => {
 
     const client = createFetchClient({
       baseUrl: 'https://example.com',
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     await client.request({
@@ -216,7 +216,7 @@ describe('createFetchClient', () => {
 
     const client = createFetchClient({
       baseUrl: 'https://example.com',
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     await expect(
@@ -252,7 +252,7 @@ describe('createFetchClient', () => {
 
     const client = createFetchClient({
       baseUrl: 'https://example.com',
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     await expect(
@@ -285,7 +285,7 @@ describe('createFetchClient', () => {
 
     const client = createFetchClient({
       baseUrl: 'https://example.com',
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     const response = await client.request({
@@ -308,7 +308,7 @@ describe('createFetchClient', () => {
     const client = createFetchClient({
       baseUrl: 'https://example.com',
       auth: { type: 'bearer', token: 'token' },
-      fetchImpl: mockFetch as any,
+      fetchImpl: mockFetch as unknown as typeof fetch,
     })
 
     await client.request({
