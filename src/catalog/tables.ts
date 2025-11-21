@@ -1,4 +1,5 @@
 import type { HttpClient } from '../http/types'
+import { IcebergError } from '../errors/IcebergError'
 import type {
   CreateTableRequest,
   ListTablesResponse,
@@ -78,5 +79,40 @@ export class TableOperations {
     })
 
     return response.data.metadata
+  }
+
+  async tableExists(id: TableIdentifier): Promise<boolean> {
+    const headers: Record<string, string> = {}
+    if (this.accessDelegation) {
+      headers['X-Iceberg-Access-Delegation'] = this.accessDelegation
+    }
+
+    try {
+      await this.client.request<void>({
+        method: 'HEAD',
+        path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+        headers,
+      })
+      return true
+    } catch (error) {
+      if (error instanceof IcebergError && error.status === 404) {
+        return false
+      }
+      throw error
+    }
+  }
+
+  async createTableIfNotExists(
+    namespace: NamespaceIdentifier,
+    request: CreateTableRequest
+  ): Promise<TableMetadata> {
+    try {
+      return await this.createTable(namespace, request)
+    } catch (error) {
+      if (error instanceof IcebergError && error.status === 409) {
+        return await this.loadTable({ namespace: namespace.namespace, name: request.name })
+      }
+      throw error
+    }
   }
 }

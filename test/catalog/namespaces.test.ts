@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { NamespaceOperations } from '../../src/catalog/namespaces'
+import { IcebergError } from '../../src/errors/IcebergError'
 import type { HttpClient } from '../../src/http/types'
 
 describe('NamespaceOperations', () => {
@@ -261,6 +262,105 @@ describe('NamespaceOperations', () => {
         method: 'GET',
         path: '/v1/namespaces/analytics\x1Fprod',
       })
+    })
+  })
+
+  describe('namespaceExists', () => {
+    it('should return true when namespace exists', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: undefined,
+      })
+
+      const ops = new NamespaceOperations(mockClient, '/v1')
+      const result = await ops.namespaceExists({ namespace: ['analytics'] })
+
+      expect(result).toBe(true)
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'HEAD',
+        path: '/v1/namespaces/analytics',
+      })
+    })
+
+    it('should return false when namespace does not exist', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockRejectedValue(
+        new IcebergError('Not Found', { status: 404 })
+      )
+
+      const ops = new NamespaceOperations(mockClient, '/v1')
+      const result = await ops.namespaceExists({ namespace: ['analytics'] })
+
+      expect(result).toBe(false)
+    })
+
+    it('should re-throw non-404 errors', async () => {
+      const mockClient = createMockClient()
+      const error = new IcebergError('Server Error', { status: 500 })
+      vi.mocked(mockClient.request).mockRejectedValue(error)
+
+      const ops = new NamespaceOperations(mockClient, '/v1')
+
+      await expect(ops.namespaceExists({ namespace: ['analytics'] })).rejects.toThrow(error)
+    })
+  })
+
+  describe('createNamespaceIfNotExists', () => {
+    it('should create namespace if it does not exist', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValueOnce({
+        status: 200,
+        headers: new Headers(),
+        data: {
+          namespace: ['analytics'],
+          properties: { owner: 'data-team' },
+        },
+      })
+
+      const ops = new NamespaceOperations(mockClient, '/v1')
+      await ops.createNamespaceIfNotExists(
+        { namespace: ['analytics'] },
+        { properties: { owner: 'data-team' } }
+      )
+
+      expect(mockClient.request).toHaveBeenCalledTimes(1)
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces',
+        body: {
+          namespace: ['analytics'],
+          properties: { owner: 'data-team' },
+        },
+      })
+    })
+
+    it('should do nothing if namespace already exists', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockRejectedValueOnce(
+        new IcebergError('Namespace already exists', { status: 409 })
+      )
+
+      const ops = new NamespaceOperations(mockClient, '/v1')
+      await ops.createNamespaceIfNotExists(
+        { namespace: ['analytics'] },
+        { properties: { owner: 'data-team' } }
+      )
+
+      expect(mockClient.request).toHaveBeenCalledTimes(1)
+    })
+
+    it('should re-throw non-409 errors', async () => {
+      const mockClient = createMockClient()
+      const error = new IcebergError('Server Error', { status: 500 })
+      vi.mocked(mockClient.request).mockRejectedValue(error)
+
+      const ops = new NamespaceOperations(mockClient, '/v1')
+
+      await expect(
+        ops.createNamespaceIfNotExists({ namespace: ['analytics'] })
+      ).rejects.toThrow(error)
     })
   })
 })

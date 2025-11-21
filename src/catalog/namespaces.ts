@@ -1,4 +1,5 @@
 import type { HttpClient } from '../http/types'
+import { IcebergError } from '../errors/IcebergError'
 import type {
   CreateNamespaceRequest,
   CreateNamespaceResponse,
@@ -63,6 +64,35 @@ export class NamespaceOperations {
 
     return {
       properties: response.data.properties,
+    }
+  }
+
+  async namespaceExists(id: NamespaceIdentifier): Promise<boolean> {
+    try {
+      await this.client.request<void>({
+        method: 'HEAD',
+        path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}`,
+      })
+      return true
+    } catch (error) {
+      if (error instanceof IcebergError && error.status === 404) {
+        return false
+      }
+      throw error
+    }
+  }
+
+  async createNamespaceIfNotExists(
+    id: NamespaceIdentifier,
+    metadata?: NamespaceMetadata
+  ): Promise<void> {
+    try {
+      await this.createNamespace(id, metadata)
+    } catch (error) {
+      if (error instanceof IcebergError && error.status === 409) {
+        return
+      }
+      throw error
     }
   }
 }

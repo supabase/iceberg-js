@@ -274,4 +274,93 @@ export class IcebergRestCatalog {
   async loadTable(id: TableIdentifier): Promise<TableMetadata> {
     return this.tableOps.loadTable(id)
   }
+
+  /**
+   * Checks if a namespace exists in the catalog.
+   *
+   * @param id - Namespace identifier to check
+   * @returns True if the namespace exists, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const exists = await catalog.namespaceExists({ namespace: ['analytics'] });
+   * console.log(exists); // true or false
+   * ```
+   */
+  async namespaceExists(id: NamespaceIdentifier): Promise<boolean> {
+    return this.namespaceOps.namespaceExists(id)
+  }
+
+  /**
+   * Checks if a table exists in the catalog.
+   *
+   * @param id - Table identifier to check
+   * @returns True if the table exists, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const exists = await catalog.tableExists({ namespace: ['analytics'], name: 'events' });
+   * console.log(exists); // true or false
+   * ```
+   */
+  async tableExists(id: TableIdentifier): Promise<boolean> {
+    return this.tableOps.tableExists(id)
+  }
+
+  /**
+   * Creates a namespace if it does not exist.
+   *
+   * If the namespace already exists, does nothing.
+   *
+   * @param id - Namespace identifier to create
+   * @param metadata - Optional metadata properties for the namespace
+   *
+   * @example
+   * ```typescript
+   * await catalog.createNamespaceIfNotExists(
+   *   { namespace: ['analytics'] },
+   *   { properties: { owner: 'data-team' } }
+   * );
+   * ```
+   */
+  async createNamespaceIfNotExists(
+    id: NamespaceIdentifier,
+    metadata?: NamespaceMetadata
+  ): Promise<void> {
+    await this.namespaceOps.createNamespaceIfNotExists(id, metadata)
+  }
+
+  /**
+   * Creates a table if it does not exist.
+   *
+   * If the table already exists, returns its metadata instead.
+   *
+   * @param namespace - Namespace to create the table in
+   * @param request - Table creation request including name, schema, partition spec, etc.
+   * @returns Table metadata for the created or existing table
+   *
+   * @example
+   * ```typescript
+   * const metadata = await catalog.createTableIfNotExists(
+   *   { namespace: ['analytics'] },
+   *   {
+   *     name: 'events',
+   *     schema: {
+   *       type: 'struct',
+   *       fields: [
+   *         { id: 1, name: 'id', type: 'long', required: true },
+   *         { id: 2, name: 'timestamp', type: 'timestamp', required: true }
+   *       ],
+   *       'schema-id': 0
+   *     }
+   *   }
+   * );
+   * ```
+   */
+  async createTableIfNotExists(
+    namespace: NamespaceIdentifier,
+    request: CreateTableRequest
+  ): Promise<TableMetadata> {
+    return this.tableOps.createTableIfNotExists(namespace, request)
+  }
 }

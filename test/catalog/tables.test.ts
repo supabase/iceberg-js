@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { TableOperations } from '../../src/catalog/tables'
+import { IcebergError } from '../../src/errors/IcebergError'
 import type { HttpClient } from '../../src/http/types'
 
 describe('TableOperations', () => {
@@ -370,6 +371,218 @@ describe('TableOperations', () => {
         method: 'DELETE',
         path: '/v1/namespaces/analytics\x1Fprod/tables/events',
       })
+    })
+  })
+
+  describe('tableExists', () => {
+    it('should return true when table exists', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: undefined,
+      })
+
+      const ops = new TableOperations(mockClient, '/v1')
+      const result = await ops.tableExists({ namespace: ['analytics'], name: 'events' })
+
+      expect(result).toBe(true)
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'HEAD',
+        path: '/v1/namespaces/analytics/tables/events',
+        headers: {},
+      })
+    })
+
+    it('should return false when table does not exist', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockRejectedValue(
+        new IcebergError('Not Found', { status: 404 })
+      )
+
+      const ops = new TableOperations(mockClient, '/v1')
+      const result = await ops.tableExists({ namespace: ['analytics'], name: 'events' })
+
+      expect(result).toBe(false)
+    })
+
+    it('should check table existence in multipart namespace', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: undefined,
+      })
+
+      const ops = new TableOperations(mockClient, '/v1')
+      await ops.tableExists({ namespace: ['analytics', 'prod'], name: 'events' })
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'HEAD',
+        path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+        headers: {},
+      })
+    })
+
+    it('should include access delegation header when checking existence', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: undefined,
+      })
+
+      const ops = new TableOperations(mockClient, '/v1', 'vended-credentials')
+      await ops.tableExists({ namespace: ['analytics'], name: 'events' })
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'HEAD',
+        path: '/v1/namespaces/analytics/tables/events',
+        headers: {
+          'X-Iceberg-Access-Delegation': 'vended-credentials',
+        },
+      })
+    })
+
+    it('should re-throw non-404 errors', async () => {
+      const mockClient = createMockClient()
+      const error = new IcebergError('Server Error', { status: 500 })
+      vi.mocked(mockClient.request).mockRejectedValue(error)
+
+      const ops = new TableOperations(mockClient, '/v1')
+
+      await expect(
+        ops.tableExists({ namespace: ['analytics'], name: 'events' })
+      ).rejects.toThrow(error)
+    })
+  })
+
+  describe('createTableIfNotExists', () => {
+    it('should create table if it does not exist', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient, '/v1')
+      const result = await ops.createTableIfNotExists(
+        { namespace: ['analytics'] },
+        {
+          name: 'events',
+          schema: {
+            type: 'struct',
+            fields: [
+              { id: 1, name: 'id', type: 'long', required: true },
+              { id: 2, name: 'timestamp', type: 'timestamp', required: true },
+            ],
+            'schema-id': 0,
+          },
+          'partition-spec': {
+            'spec-id': 0,
+            fields: [],
+          },
+        }
+      )
+
+      expect(result).toEqual(mockTableMetadata)
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces/analytics/tables',
+        body: expect.objectContaining({
+          name: 'events',
+          schema: expect.any(Object),
+        }),
+        headers: {},
+      })
+    })
+
+    it('should return existing table metadata if already exists', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request)
+        .mockRejectedValueOnce(
+          new IcebergError('Table already exists', { status: 409 })
+        )
+        .mockResolvedValueOnce({
+          status: 200,
+          headers: new Headers(),
+          data: { metadata: mockTableMetadata },
+        })
+
+      const ops = new TableOperations(mockClient, '/v1')
+      const result = await ops.createTableIfNotExists(
+        { namespace: ['analytics'] },
+        {
+          name: 'events',
+          schema: {
+            type: 'struct',
+            fields: [{ id: 1, name: 'id', type: 'long', required: true }],
+            'schema-id': 0,
+          },
+        }
+      )
+
+      expect(result).toEqual(mockTableMetadata)
+      expect(mockClient.request).toHaveBeenCalledTimes(2)
+      expect(mockClient.request).toHaveBeenNthCalledWith(2, {
+        method: 'GET',
+        path: '/v1/namespaces/analytics/tables/events',
+        headers: {},
+      })
+    })
+
+    it('should include access delegation header when creating table', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        data: { metadata: mockTableMetadata },
+      })
+
+      const ops = new TableOperations(mockClient, '/v1', 'vended-credentials')
+      await ops.createTableIfNotExists(
+        { namespace: ['analytics'] },
+        {
+          name: 'events',
+          schema: {
+            type: 'struct',
+            fields: [{ id: 1, name: 'id', type: 'long', required: true }],
+            'schema-id': 0,
+          },
+        }
+      )
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'POST',
+        path: '/v1/namespaces/analytics/tables',
+        body: expect.any(Object),
+        headers: {
+          'X-Iceberg-Access-Delegation': 'vended-credentials',
+        },
+      })
+    })
+
+    it('should re-throw non-409 errors', async () => {
+      const mockClient = createMockClient()
+      const error = new IcebergError('Server Error', { status: 500 })
+      vi.mocked(mockClient.request).mockRejectedValue(error)
+
+      const ops = new TableOperations(mockClient, '/v1')
+
+      await expect(
+        ops.createTableIfNotExists(
+          { namespace: ['analytics'] },
+          {
+            name: 'events',
+            schema: {
+              type: 'struct',
+              fields: [{ id: 1, name: 'id', type: 'long', required: true }],
+              'schema-id': 0,
+            },
+          }
+        )
+      ).rejects.toThrow(error)
     })
   })
 
