@@ -14,6 +14,7 @@ export type {
   SortField,
   CreateTableRequest,
   UpdateTableRequest,
+  DropTableRequest,
   TableMetadata,
 } from './catalog/types'
 

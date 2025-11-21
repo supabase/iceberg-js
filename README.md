@@ -14,28 +14,6 @@ A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceber
 - **Universal**: Targets Node 20+ and modern browsers (ES2020)
 - **Catalog-only**: Focused on catalog operations (no data reading/Parquet support in v0.1.0)
 
-## Compatibility
-
-This package is built to work in **all** Node.js and JavaScript environments:
-
-| Environment         | Module System        | Import Method                           | Status                |
-| ------------------- | -------------------- | --------------------------------------- | --------------------- |
-| Node.js ESM         | `"type": "module"`   | `import { ... } from 'iceberg-js'`      | ✅ Fully supported    |
-| Node.js CommonJS    | Default              | `const { ... } = require('iceberg-js')` | ✅ Fully supported    |
-| TypeScript ESM      | `module: "ESNext"`   | `import { ... } from 'iceberg-js'`      | ✅ Full type support  |
-| TypeScript CommonJS | `module: "CommonJS"` | `import { ... } from 'iceberg-js'`      | ✅ Full type support  |
-| Bundlers            | Any                  | Webpack, Vite, esbuild, Rollup, etc.    | ✅ Auto-detected      |
-| Browsers            | ESM                  | `<script type="module">`                | ✅ Modern browsers    |
-| Deno                | ESM                  | `import` from npm:                      | ✅ With npm specifier |
-
-**Package exports:**
-
-- ESM: `dist/index.mjs` with `dist/index.d.ts`
-- CommonJS: `dist/index.cjs` with `dist/index.d.cts`
-- Proper `exports` field for Node.js 12+ module resolution
-
-All scenarios are tested in CI on Node.js 20 and 22.
-
 ## Installation
 
 ```bash
@@ -304,6 +282,28 @@ The following Iceberg primitive types are supported:
 - `string`, `uuid`, `binary`
 - `date`, `time`, `timestamp`, `timestamptz`
 - `decimal(precision, scale)`, `fixed(length)`
+
+## Compatibility
+
+This package is built to work in **all** Node.js and JavaScript environments:
+
+| Environment         | Module System        | Import Method                           | Status                |
+| ------------------- | -------------------- | --------------------------------------- | --------------------- |
+| Node.js ESM         | `"type": "module"`   | `import { ... } from 'iceberg-js'`      | ✅ Fully supported    |
+| Node.js CommonJS    | Default              | `const { ... } = require('iceberg-js')` | ✅ Fully supported    |
+| TypeScript ESM      | `module: "ESNext"`   | `import { ... } from 'iceberg-js'`      | ✅ Full type support  |
+| TypeScript CommonJS | `module: "CommonJS"` | `import { ... } from 'iceberg-js'`      | ✅ Full type support  |
+| Bundlers            | Any                  | Webpack, Vite, esbuild, Rollup, etc.    | ✅ Auto-detected      |
+| Browsers            | ESM                  | `<script type="module">`                | ✅ Modern browsers    |
+| Deno                | ESM                  | `import` from npm:                      | ✅ With npm specifier |
+
+**Package exports:**
+
+- ESM: `dist/index.mjs` with `dist/index.d.ts`
+- CommonJS: `dist/index.cjs` with `dist/index.d.cts`
+- Proper `exports` field for Node.js 12+ module resolution
+
+All scenarios are tested in CI on Node.js 20 and 22.
 
 ## Browser Usage
 
