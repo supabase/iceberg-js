@@ -23,7 +23,7 @@ export class TableOperations {
   async listTables(namespace: NamespaceIdentifier): Promise<TableIdentifier[]> {
     const response = await this.client.request<ListTablesResponse>({
       method: 'GET',
-      path: `${this.prefix}/v1/namespaces/${namespaceToPath(namespace.namespace)}/tables`,
+      path: `${this.prefix}/namespaces/${namespaceToPath(namespace.namespace)}/tables`,
     })
 
     return response.data.identifiers
@@ -40,7 +40,7 @@ export class TableOperations {
 
     const response = await this.client.request<LoadTableResponse>({
       method: 'POST',
-      path: `${this.prefix}/v1/namespaces/${namespaceToPath(namespace.namespace)}/tables`,
+      path: `${this.prefix}/namespaces/${namespaceToPath(namespace.namespace)}/tables`,
       body: request,
       headers,
     })
@@ -51,7 +51,7 @@ export class TableOperations {
   async updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<TableMetadata> {
     const response = await this.client.request<LoadTableResponse>({
       method: 'POST',
-      path: `${this.prefix}/v1/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
       body: request,
     })
 
@@ -61,7 +61,7 @@ export class TableOperations {
   async dropTable(id: TableIdentifier): Promise<void> {
     await this.client.request<void>({
       method: 'DELETE',
-      path: `${this.prefix}/v1/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
     })
   }
 
@@ -73,7 +73,7 @@ export class TableOperations {
 
     const response = await this.client.request<LoadTableResponse>({
       method: 'GET',
-      path: `${this.prefix}/v1/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
       headers,
     })
 

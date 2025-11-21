@@ -51,7 +51,7 @@ describe('TableOperations', () => {
         },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       const result = await ops.listTables({ namespace: ['analytics'] })
 
       expect(result).toEqual([
@@ -72,7 +72,7 @@ describe('TableOperations', () => {
         data: { identifiers: [] },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       await ops.listTables({ namespace: ['analytics', 'prod'] })
 
       expect(mockClient.request).toHaveBeenCalledWith({
@@ -89,12 +89,12 @@ describe('TableOperations', () => {
         data: { identifiers: [] },
       })
 
-      const ops = new TableOperations(mockClient, '/catalog1')
+      const ops = new TableOperations(mockClient, '/v1/catalog1')
       await ops.listTables({ namespace: ['analytics'] })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/catalog1/v1/namespaces/analytics/tables',
+        path: '/v1/catalog1/namespaces/analytics/tables',
       })
     })
   })
@@ -110,7 +110,7 @@ describe('TableOperations', () => {
         },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       const result = await ops.createTable(
         { namespace: ['analytics'] },
         {
@@ -150,7 +150,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       await ops.createTable(
         { namespace: ['analytics'] },
         {
@@ -202,7 +202,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       await ops.createTable(
         { namespace: ['analytics'] },
         {
@@ -244,7 +244,7 @@ describe('TableOperations', () => {
         },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       const result = await ops.loadTable({ namespace: ['analytics'], name: 'events' })
 
       expect(result).toEqual(mockTableMetadata)
@@ -263,7 +263,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       await ops.loadTable({ namespace: ['analytics', 'prod'], name: 'events' })
 
       expect(mockClient.request).toHaveBeenCalledWith({
@@ -283,7 +283,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       const result = await ops.updateTable(
         { namespace: ['analytics'], name: 'events' },
         {
@@ -309,7 +309,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       await ops.updateTable(
         { namespace: ['analytics'], name: 'events' },
         {
@@ -346,7 +346,7 @@ describe('TableOperations', () => {
         data: undefined,
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       await ops.dropTable({ namespace: ['analytics'], name: 'events' })
 
       expect(mockClient.request).toHaveBeenCalledWith({
@@ -363,7 +363,7 @@ describe('TableOperations', () => {
         data: undefined,
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       await ops.dropTable({ namespace: ['analytics', 'prod'], name: 'events' })
 
       expect(mockClient.request).toHaveBeenCalledWith({
@@ -382,7 +382,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient, '', 'vended-credentials')
+      const ops = new TableOperations(mockClient, '/v1', 'vended-credentials')
       await ops.createTable(
         { namespace: ['analytics'] },
         {
@@ -413,7 +413,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient, '', 'vended-credentials,remote-signing')
+      const ops = new TableOperations(mockClient, '/v1', 'vended-credentials,remote-signing')
       await ops.loadTable({ namespace: ['analytics'], name: 'events' })
 
       expect(mockClient.request).toHaveBeenCalledWith({
@@ -433,7 +433,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient)
+      const ops = new TableOperations(mockClient, '/v1')
       await ops.createTable(
         { namespace: ['analytics'] },
         {
