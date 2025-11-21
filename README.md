@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/supabase/iceberg-js/actions/workflows/ci.yml/badge.svg)](https://github.com/supabase/iceberg-js/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/iceberg-js.svg)](https://www.npmjs.com/package/iceberg-js)
+[![pkg.pr.new](https://pkg.pr.new/badge/supabase/iceberg-js)](https://pkg.pr.new/~/supabase/iceberg-js)
 
 A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceberg REST Catalog**.
 
@@ -13,6 +14,10 @@ A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceber
 - **Fetch-based**: Uses native `fetch` API with support for custom implementations
 - **Universal**: Targets Node 20+ and modern browsers (ES2020)
 - **Catalog-only**: Focused on catalog operations (no data reading/Parquet support in v0.1.0)
+
+## Documentation
+
+📚 **Full API documentation**: [supabase.github.io/iceberg-js](https://supabase.github.io/iceberg-js/)
 
 ## Installation
 
