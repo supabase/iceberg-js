@@ -32,7 +32,7 @@
     "test:watch": "vitest watch",
     "test:integration": "bash scripts/test-integration.sh",
     "test:integration:ci": "bash scripts/test-integration.sh --cleanup",
-    "test:compatibility": "bash test-compatibility/run-all.sh",
+    "test:compatibility": "bash test/compatibility/run-all.sh",
     "check": "pnpm lint && pnpm type-check && pnpm test && pnpm build"
   },
   "keywords": [

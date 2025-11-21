@@ -12,5 +12,6 @@
     "allowSyntheticDefaultImports": true,
     "types": ["vitest/globals", "node"]
   },
-  "include": ["src", "test"]
+  "include": ["src", "test"],
+  "exclude": ["test/compatibility"]
 }

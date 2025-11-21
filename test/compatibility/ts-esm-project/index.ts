@@ -1,10 +1,10 @@
 // TypeScript ESM Test - tests that the package works in TS ESM mode with types
-import { IcebergRestCatalog, type IcebergConfig } from 'iceberg-js'
+import { IcebergRestCatalog, type IcebergRestCatalogOptions } from 'iceberg-js'
 
 console.log('✅ TS-ESM: Successfully imported IcebergRestCatalog and types')
 
 // Test type checking
-const config: IcebergConfig = {
+const config: IcebergRestCatalogOptions = {
   baseUrl: 'http://localhost:8181',
   auth: { type: 'none' },
 }

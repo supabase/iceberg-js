@@ -3,7 +3,10 @@ set -e
 
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+echo "SCRIPT_DIR: $SCRIPT_DIR"
+echo "ROOT_DIR: $ROOT_DIR"
 
 echo "🧪 Running compatibility tests for iceberg-js..."
 echo ""
@@ -14,7 +17,7 @@ if [ ! -d "$ROOT_DIR/dist" ]; then
   exit 1
 fi
 
-# Change to test-compatibility directory
+# Change to test/compatibility directory
 cd "$SCRIPT_DIR"
 
 # Test ESM
@@ -22,7 +25,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "🔵 Testing ESM (Pure JavaScript)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 cd esm-project
-npm install ../..
+npm install "$ROOT_DIR"
 npm test
 cd ..
 echo ""
@@ -32,7 +35,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "🟢 Testing CommonJS (Pure JavaScript)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 cd cjs-project
-npm install ../..
+npm install "$ROOT_DIR"
 npm test
 cd ..
 echo ""
@@ -43,7 +46,7 @@ echo "🔷 Testing TypeScript ESM"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 cd ts-esm-project
 npm install
-npm install ../..
+npm install "$ROOT_DIR"
 npm test
 cd ..
 echo ""
@@ -54,7 +57,7 @@ echo "🟩 Testing TypeScript CommonJS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 cd ts-cjs-project
 npm install
-npm install ../..
+npm install "$ROOT_DIR"
 npm test
 cd ..
 echo ""

@@ -396,7 +396,7 @@ The `test:compatibility` script verifies the package works correctly in all Java
 - **TypeScript ESM** - TypeScript with `module: "ESNext"`
 - **TypeScript CommonJS** - TypeScript with `module: "CommonJS"`
 
-These tests ensure proper module resolution, type definitions, and runtime behavior across all supported environments. See [test-compatibility/README.md](./test-compatibility/README.md) for more details.
+These tests ensure proper module resolution, type definitions, and runtime behavior across all supported environments. See [test/compatibility/README.md](./test/compatibility/README.md) for more details.
 
 ## License
 

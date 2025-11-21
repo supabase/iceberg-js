@@ -8,8 +8,8 @@ coverage/
 tmp/
 
 # Compatibility test artifacts
-test-compatibility/**/package-lock.json
-test-compatibility/**/node_modules/
+test/compatibility/**/package-lock.json
+test/compatibility/**/node_modules/
 
 CLAUDE.md
 WARP.md

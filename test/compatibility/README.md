@@ -18,13 +18,13 @@ From the root of the `iceberg-js` project:
 pnpm build
 
 # Run all compatibility tests
-bash test-compatibility/run-all.sh
+bash test/compatibility/run-all.sh
 ```
 
 Or test individually:
 
 ```bash
-cd test-compatibility/esm-project
+cd test/compatibility/esm-project
 npm install
 npm test
 ```

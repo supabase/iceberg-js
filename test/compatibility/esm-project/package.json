@@ -7,6 +7,6 @@
     "test": "node index.js"
   },
   "dependencies": {
-    "iceberg-js": "file:../.."
+    "iceberg-js": "file:../../.."
   }
 }
