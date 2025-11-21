@@ -352,6 +352,25 @@ describe('TableOperations', () => {
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
         path: '/v1/namespaces/analytics/tables/events',
+        query: {purgeRequested: "false"}
+      })
+    })
+
+    it('should drop a table with purge set to true', async () => {
+      const mockClient = createMockClient()
+      vi.mocked(mockClient.request).mockResolvedValue({
+        status: 204,
+        headers: new Headers(),
+        data: undefined,
+      })
+
+      const ops = new TableOperations(mockClient, '/v1')
+      await ops.dropTable({ namespace: ['analytics'], name: 'events' }, {purge: true})
+
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: 'DELETE',
+        path: '/v1/namespaces/analytics/tables/events',
+        query: {purgeRequested: "true"}
       })
     })
 
@@ -369,6 +388,7 @@ describe('TableOperations', () => {
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
         path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+        query: {purgeRequested: "false"}
       })
     })
   })

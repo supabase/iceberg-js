@@ -81,6 +81,10 @@ export interface UpdateTableRequest {
   properties?: Record<string, string>
 }
 
+export interface DropTableRequest {
+  purge?: boolean
+}
+
 export interface TableMetadata {
   name?: string
   location: string

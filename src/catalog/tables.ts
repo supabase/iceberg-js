@@ -7,6 +7,7 @@ import type {
   TableIdentifier,
   TableMetadata,
   UpdateTableRequest,
+  DropTableRequest,
 } from './types'
 
 function namespaceToPath(namespace: string[]): string {
@@ -58,10 +59,11 @@ export class TableOperations {
     return response.data.metadata
   }
 
-  async dropTable(id: TableIdentifier): Promise<void> {
+  async dropTable(id: TableIdentifier, options?: DropTableRequest): Promise<void> {
     await this.client.request<void>({
       method: 'DELETE',
       path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      query: { purgeRequested: String(options?.purge ?? false) },
     })
   }
 

@@ -9,6 +9,7 @@ import type {
   TableIdentifier,
   TableMetadata,
   UpdateTableRequest,
+  DropTableRequest,
 } from './types'
 
 /**
@@ -254,8 +255,8 @@ export class IcebergRestCatalog {
    * await catalog.dropTable({ namespace: ['analytics'], name: 'events' });
    * ```
    */
-  async dropTable(id: TableIdentifier): Promise<void> {
-    await this.tableOps.dropTable(id)
+  async dropTable(id: TableIdentifier, options?: DropTableRequest): Promise<void> {
+    await this.tableOps.dropTable(id, options)
   }
 
   /**
