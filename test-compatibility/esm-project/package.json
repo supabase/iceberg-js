@@ -1,0 +1,12 @@
+{
+  "name": "test-esm-compatibility",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node index.js"
+  },
+  "dependencies": {
+    "iceberg-js": "file:../.."
+  }
+}

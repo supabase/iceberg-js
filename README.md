@@ -1,5 +1,8 @@
 # iceberg-js
 
+[![CI](https://github.com/supabase/iceberg-js/actions/workflows/ci.yml/badge.svg)](https://github.com/supabase/iceberg-js/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/iceberg-js.svg)](https://www.npmjs.com/package/iceberg-js)
+
 A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceberg REST Catalog**.
 
 ## Features
@@ -10,6 +13,28 @@ A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceber
 - **Fetch-based**: Uses native `fetch` API with support for custom implementations
 - **Universal**: Targets Node 20+ and modern browsers (ES2020)
 - **Catalog-only**: Focused on catalog operations (no data reading/Parquet support in v0.1.0)
+
+## Compatibility
+
+This package is built to work in **all** Node.js and JavaScript environments:
+
+| Environment         | Module System        | Import Method                           | Status                |
+| ------------------- | -------------------- | --------------------------------------- | --------------------- |
+| Node.js ESM         | `"type": "module"`   | `import { ... } from 'iceberg-js'`      | ✅ Fully supported    |
+| Node.js CommonJS    | Default              | `const { ... } = require('iceberg-js')` | ✅ Fully supported    |
+| TypeScript ESM      | `module: "ESNext"`   | `import { ... } from 'iceberg-js'`      | ✅ Full type support  |
+| TypeScript CommonJS | `module: "CommonJS"` | `import { ... } from 'iceberg-js'`      | ✅ Full type support  |
+| Bundlers            | Any                  | Webpack, Vite, esbuild, Rollup, etc.    | ✅ Auto-detected      |
+| Browsers            | ESM                  | `<script type="module">`                | ✅ Modern browsers    |
+| Deno                | ESM                  | `import` from npm:                      | ✅ With npm specifier |
+
+**Package exports:**
+
+- ESM: `dist/index.mjs` with `dist/index.d.ts`
+- CommonJS: `dist/index.cjs` with `dist/index.d.cts`
+- Proper `exports` field for Node.js 12+ module resolution
+
+All scenarios are tested in CI on Node.js 20 and 22.
 
 ## Installation
 
@@ -338,6 +363,9 @@ pnpm test:integration
 # Run integration tests with cleanup (for CI)
 pnpm test:integration:ci
 
+# Run compatibility tests (all module systems)
+pnpm test:compatibility
+
 # Format code
 pnpm run format
 
@@ -358,6 +386,17 @@ docker compose up -d
 npx tsx test/integration/test-local-catalog.ts
 docker compose down -v
 ```
+
+### Compatibility Testing
+
+The `test:compatibility` script verifies the package works correctly in all JavaScript/TypeScript environments:
+
+- **Pure JavaScript ESM** - Projects with `"type": "module"`
+- **Pure JavaScript CommonJS** - Traditional Node.js projects
+- **TypeScript ESM** - TypeScript with `module: "ESNext"`
+- **TypeScript CommonJS** - TypeScript with `module: "CommonJS"`
+
+These tests ensure proper module resolution, type definitions, and runtime behavior across all supported environments. See [test-compatibility/README.md](./test-compatibility/README.md) for more details.
 
 ## License
 

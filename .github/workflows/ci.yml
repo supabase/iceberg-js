@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    name: Run Tests
+    uses: ./.github/workflows/test.yml
+
+  integration-test:
+    name: Run Integration Tests
+    uses: ./.github/workflows/integration-test.yml
+
+  compatibility-test:
+    name: Run Compatibility Tests
+    uses: ./.github/workflows/compatibility.yml

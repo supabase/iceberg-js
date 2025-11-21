@@ -8,9 +8,15 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      },
+      "default": "./dist/index.mjs"
     }
   },
   "files": [
@@ -26,6 +32,7 @@
     "test:watch": "vitest watch",
     "test:integration": "bash scripts/test-integration.sh",
     "test:integration:ci": "bash scripts/test-integration.sh --cleanup",
+    "test:compatibility": "bash test-compatibility/run-all.sh",
     "check": "pnpm lint && pnpm type-check && pnpm test && pnpm build"
   },
   "keywords": [

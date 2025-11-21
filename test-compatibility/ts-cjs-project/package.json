@@ -1,0 +1,15 @@
+{
+  "name": "test-ts-cjs-compatibility",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "tsx index.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "iceberg-js": "file:../.."
+  }
+}
