@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.6.0...iceberg-js-v0.7.0) (2025-11-21)
+
+
+### Features
+
+* add namespace and table existence checks with creation methods ([#18](https://github.com/supabase/iceberg-js/issues/18)) ([7a5d0e5](https://github.com/supabase/iceberg-js/commit/7a5d0e55d62898557c5dd69e39e8486385e87b11))
+
 ## [0.6.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.5.1...iceberg-js-v0.6.0) (2025-11-21)
 
 
