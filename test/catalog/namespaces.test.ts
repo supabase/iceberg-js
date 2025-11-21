@@ -358,9 +358,9 @@ describe('NamespaceOperations', () => {
 
       const ops = new NamespaceOperations(mockClient, '/v1')
 
-      await expect(
-        ops.createNamespaceIfNotExists({ namespace: ['analytics'] })
-      ).rejects.toThrow(error)
+      await expect(ops.createNamespaceIfNotExists({ namespace: ['analytics'] })).rejects.toThrow(
+        error
+      )
     })
   })
 })

@@ -451,9 +451,9 @@ describe('TableOperations', () => {
 
       const ops = new TableOperations(mockClient, '/v1')
 
-      await expect(
-        ops.tableExists({ namespace: ['analytics'], name: 'events' })
-      ).rejects.toThrow(error)
+      await expect(ops.tableExists({ namespace: ['analytics'], name: 'events' })).rejects.toThrow(
+        error
+      )
     })
   })
 
@@ -501,9 +501,7 @@ describe('TableOperations', () => {
     it('should return existing table metadata if already exists', async () => {
       const mockClient = createMockClient()
       vi.mocked(mockClient.request)
-        .mockRejectedValueOnce(
-          new IcebergError('Table already exists', { status: 409 })
-        )
+        .mockRejectedValueOnce(new IcebergError('Table already exists', { status: 409 }))
         .mockResolvedValueOnce({
           status: 200,
           headers: new Headers(),
