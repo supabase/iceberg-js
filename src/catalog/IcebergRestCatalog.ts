@@ -85,8 +85,10 @@ export class IcebergRestCatalog {
       prefix += `/${options.catalogName}`
     }
 
+    const baseUrl = options.baseUrl.endsWith('/') ? options.baseUrl : `${options.baseUrl}/`
+
     this.client = createFetchClient({
-      baseUrl: options.baseUrl,
+      baseUrl,
       auth: options.auth,
       fetchImpl: options.fetch,
     })
