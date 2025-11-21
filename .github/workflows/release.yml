@@ -40,11 +40,11 @@ jobs:
       - name: Build
         if: ${{ steps.release.outputs.release_created }}
         run: pnpm build
-      
+
       # Ensure npm 11.5.1 or later is installed for trusted publishing support
       - name: Update npm
-       run: npm install -g npm@latest
-       
+        run: npm install -g npm@latest
+
       # Use npm for publish (pnpm cannot handle trusted publishing reliably)
       - name: Publish to npm (trusted publishing)
         if: ${{ steps.release.outputs.release_created }}
