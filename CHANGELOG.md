@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.5.1...iceberg-js-v0.6.0) (2025-11-21)
+
+
+### Features
+
+* add purge flag to dropTable method ([#14](https://github.com/supabase/iceberg-js/issues/14)) ([ba5b723](https://github.com/supabase/iceberg-js/commit/ba5b7232a593b0240f6b65de5308e1ce7bf3df40))
+* release for all compatible envs ([#15](https://github.com/supabase/iceberg-js/issues/15)) ([5f649f8](https://github.com/supabase/iceberg-js/commit/5f649f85b9930203d20580edf77b6a44c0dd545b))
+
+
+### Bug Fixes
+
+* ensure baseUrl has trailing / for proper URL creation ([#13](https://github.com/supabase/iceberg-js/issues/13)) ([6baf4b9](https://github.com/supabase/iceberg-js/commit/6baf4b9fa3252dc0c98c46a1d8c5f76a316a5071))
+
 ## [0.5.1](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.5.0...iceberg-js-v0.5.1) (2025-11-21)
 
 ### Bug Fixes
