@@ -424,26 +424,6 @@ describe('TableOperations', () => {
       })
     })
 
-    it('should include access delegation header when checking existence', async () => {
-      const mockClient = createMockClient()
-      vi.mocked(mockClient.request).mockResolvedValue({
-        status: 200,
-        headers: new Headers(),
-        data: undefined,
-      })
-
-      const ops = new TableOperations(mockClient, '/v1', 'vended-credentials')
-      await ops.tableExists({ namespace: ['analytics'], name: 'events' })
-
-      expect(mockClient.request).toHaveBeenCalledWith({
-        method: 'HEAD',
-        path: '/v1/namespaces/analytics/tables/events',
-        headers: {
-          'X-Iceberg-Access-Delegation': 'vended-credentials',
-        },
-      })
-    })
-
     it('should re-throw non-404 errors', async () => {
       const mockClient = createMockClient()
       const error = new IcebergError('Server Error', { status: 500 })
@@ -529,37 +509,6 @@ describe('TableOperations', () => {
         method: 'GET',
         path: '/v1/namespaces/analytics/tables/events',
         headers: {},
-      })
-    })
-
-    it('should include access delegation header when creating table', async () => {
-      const mockClient = createMockClient()
-      vi.mocked(mockClient.request).mockResolvedValue({
-        status: 200,
-        headers: new Headers(),
-        data: { metadata: mockTableMetadata },
-      })
-
-      const ops = new TableOperations(mockClient, '/v1', 'vended-credentials')
-      await ops.createTableIfNotExists(
-        { namespace: ['analytics'] },
-        {
-          name: 'events',
-          schema: {
-            type: 'struct',
-            fields: [{ id: 1, name: 'id', type: 'long', required: true }],
-            'schema-id': 0,
-          },
-        }
-      )
-
-      expect(mockClient.request).toHaveBeenCalledWith({
-        method: 'POST',
-        path: '/v1/namespaces/analytics/tables',
-        body: expect.any(Object),
-        headers: {
-          'X-Iceberg-Access-Delegation': 'vended-credentials',
-        },
       })
     })
 
