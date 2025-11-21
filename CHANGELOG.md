@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.5.0...iceberg-js-v0.5.1) (2025-11-21)
+
+
+### Bug Fixes
+
+* format all files ([#11](https://github.com/supabase/iceberg-js/issues/11)) ([f95874b](https://github.com/supabase/iceberg-js/commit/f95874b3b94bb7fff32970ebebbbeb7745263e02))
+* update npm to latest for release ([#10](https://github.com/supabase/iceberg-js/issues/10)) ([7943aca](https://github.com/supabase/iceberg-js/commit/7943acab02005ad5e5be249a201fe2dce810b57b))
+
 ## [0.5.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.4.0...iceberg-js-v0.5.0) (2025-11-21)
 
 ### Features
