@@ -352,7 +352,7 @@ describe('TableOperations', () => {
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
         path: '/v1/namespaces/analytics/tables/events',
-        query: {purgeRequested: "false"}
+        query: { purgeRequested: 'false' },
       })
     })
 
@@ -365,12 +365,12 @@ describe('TableOperations', () => {
       })
 
       const ops = new TableOperations(mockClient, '/v1')
-      await ops.dropTable({ namespace: ['analytics'], name: 'events' }, {purge: true})
+      await ops.dropTable({ namespace: ['analytics'], name: 'events' }, { purge: true })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
         path: '/v1/namespaces/analytics/tables/events',
-        query: {purgeRequested: "true"}
+        query: { purgeRequested: 'true' },
       })
     })
 
@@ -388,7 +388,7 @@ describe('TableOperations', () => {
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
         path: '/v1/namespaces/analytics\x1Fprod/tables/events',
-        query: {purgeRequested: "false"}
+        query: { purgeRequested: 'false' },
       })
     })
   })
