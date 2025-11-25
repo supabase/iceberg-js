@@ -281,7 +281,10 @@ describe('TableOperations', () => {
       vi.mocked(mockClient.request).mockResolvedValue({
         status: 200,
         headers: new Headers(),
-        data: { metadata: mockTableMetadata },
+        data: {
+          'metadata-location': 's3://bucket/warehouse/analytics/events/metadata/v1.json',
+          metadata: mockTableMetadata,
+        },
       })
 
       const ops = new TableOperations(mockClient, '/v1')
@@ -292,7 +295,10 @@ describe('TableOperations', () => {
         }
       )
 
-      expect(result).toEqual(mockTableMetadata)
+      expect(result).toEqual({
+        'metadata-location': 's3://bucket/warehouse/analytics/events/metadata/v1.json',
+        metadata: mockTableMetadata,
+      })
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
         path: '/v1/namespaces/analytics/tables/events',
@@ -307,7 +313,10 @@ describe('TableOperations', () => {
       vi.mocked(mockClient.request).mockResolvedValue({
         status: 200,
         headers: new Headers(),
-        data: { metadata: mockTableMetadata },
+        data: {
+          'metadata-location': 's3://bucket/warehouse/analytics/events/metadata/v1.json',
+          metadata: mockTableMetadata,
+        },
       })
 
       const ops = new TableOperations(mockClient, '/v1')

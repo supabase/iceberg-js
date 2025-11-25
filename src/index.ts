@@ -13,6 +13,8 @@ export type {
   SortOrder,
   SortField,
   CreateTableRequest,
+  CreateNamespaceResponse,
+  CommitTableResponse,
   UpdateTableRequest,
   DropTableRequest,
   TableMetadata,

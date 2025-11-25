@@ -85,9 +85,9 @@ export class NamespaceOperations {
   async createNamespaceIfNotExists(
     id: NamespaceIdentifier,
     metadata?: NamespaceMetadata
-  ): Promise<void> {
+  ): Promise<CreateNamespaceResponse | void> {
     try {
-      await this.createNamespace(id, metadata)
+      return await this.createNamespace(id, metadata)
     } catch (error) {
       if (error instanceof IcebergError && error.status === 409) {
         return

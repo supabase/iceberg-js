@@ -4,6 +4,8 @@ import { NamespaceOperations } from './namespaces'
 import { TableOperations } from './tables'
 import type {
   CreateTableRequest,
+  CreateNamespaceResponse,
+  CommitTableResponse,
   NamespaceIdentifier,
   NamespaceMetadata,
   TableIdentifier,
@@ -125,17 +127,20 @@ export class IcebergRestCatalog {
    *
    * @param id - Namespace identifier to create
    * @param metadata - Optional metadata properties for the namespace
+   * @returns Response containing the created namespace and its properties
    *
    * @example
    * ```typescript
-   * await catalog.createNamespace(
+   * const response = await catalog.createNamespace(
    *   { namespace: ['analytics'] },
    *   { properties: { owner: 'data-team' } }
    * );
+   * console.log(response.namespace); // ['analytics']
+   * console.log(response.properties); // { owner: 'data-team', ... }
    * ```
    */
-  async createNamespace(id: NamespaceIdentifier, metadata?: NamespaceMetadata): Promise<void> {
-    await this.namespaceOps.createNamespace(id, metadata)
+  async createNamespace(id: NamespaceIdentifier, metadata?: NamespaceMetadata): Promise<CreateNamespaceResponse> {
+    return this.namespaceOps.createNamespace(id, metadata)
   }
 
   /**
@@ -231,19 +236,21 @@ export class IcebergRestCatalog {
    *
    * @param id - Table identifier to update
    * @param request - Update request with fields to modify
-   * @returns Updated table metadata
+   * @returns Response containing the metadata location and updated table metadata
    *
    * @example
    * ```typescript
-   * const updated = await catalog.updateTable(
+   * const response = await catalog.updateTable(
    *   { namespace: ['analytics'], name: 'events' },
    *   {
    *     properties: { 'read.split.target-size': '134217728' }
    *   }
    * );
+   * console.log(response['metadata-location']); // s3://...
+   * console.log(response.metadata); // TableMetadata object
    * ```
    */
-  async updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<TableMetadata> {
+  async updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<CommitTableResponse> {
     return this.tableOps.updateTable(id, request)
   }
 
@@ -313,24 +320,30 @@ export class IcebergRestCatalog {
   /**
    * Creates a namespace if it does not exist.
    *
-   * If the namespace already exists, does nothing.
+   * If the namespace already exists, returns void. If created, returns the response.
    *
    * @param id - Namespace identifier to create
    * @param metadata - Optional metadata properties for the namespace
+   * @returns Response containing the created namespace and its properties, or void if it already exists
    *
    * @example
    * ```typescript
-   * await catalog.createNamespaceIfNotExists(
+   * const response = await catalog.createNamespaceIfNotExists(
    *   { namespace: ['analytics'] },
    *   { properties: { owner: 'data-team' } }
    * );
+   * if (response) {
+   *   console.log('Created:', response.namespace);
+   * } else {
+   *   console.log('Already exists');
+   * }
    * ```
    */
   async createNamespaceIfNotExists(
     id: NamespaceIdentifier,
     metadata?: NamespaceMetadata
-  ): Promise<void> {
-    await this.namespaceOps.createNamespaceIfNotExists(id, metadata)
+  ): Promise<CreateNamespaceResponse | void> {
+    return this.namespaceOps.createNamespaceIfNotExists(id, metadata)
   }
 
   /**
