@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.7.0...iceberg-js-v0.8.0) (2025-11-25)
+
+
+### Features
+
+* match Catalog API return types and error structure ([#22](https://github.com/supabase/iceberg-js/issues/22)) ([87dbaba](https://github.com/supabase/iceberg-js/commit/87dbabac6e8c4cf66183aaf79109722a1339c95c))
+
 ## [0.7.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.6.0...iceberg-js-v0.7.0) (2025-11-21)
 
 
