@@ -140,6 +140,11 @@ export interface LoadTableResponse {
   config?: Record<string, string>
 }
 
+export interface CommitTableResponse {
+  'metadata-location': string
+  metadata: TableMetadata
+}
+
 /**
  * Gets the current (active) schema from table metadata.
  *

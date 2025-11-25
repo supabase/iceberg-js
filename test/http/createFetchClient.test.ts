@@ -208,9 +208,11 @@ describe('createFetchClient', () => {
       headers: new Headers({ 'content-type': 'application/json' }),
       text: async () =>
         JSON.stringify({
-          message: 'Table not found',
-          type: 'NoSuchTableException',
-          code: 404,
+          error: {
+            message: 'Table not found',
+            type: 'NoSuchTableException',
+            code: 404,
+          },
         }),
     })
 
@@ -295,6 +297,198 @@ describe('createFetchClient', () => {
 
     expect(response.status).toBe(200)
     expect(response.data).toBe('plain text response')
+  })
+
+  it('should detect CommitStateUnknownException for 500 errors', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: async () =>
+        JSON.stringify({
+          error: {
+            message: 'Internal Server Error',
+            type: 'CommitStateUnknownException',
+            code: 500,
+          },
+        }),
+    })
+
+    const client = createFetchClient({
+      baseUrl: 'https://example.com',
+      fetchImpl: mockFetch as unknown as typeof fetch,
+    })
+
+    try {
+      await client.request({
+        method: 'POST',
+        path: '/tables/test',
+      })
+    } catch (error) {
+      expect(error).toBeInstanceOf(IcebergError)
+      if (error instanceof IcebergError) {
+        expect(error.status).toBe(500)
+        expect(error.icebergType).toBe('CommitStateUnknownException')
+        expect(error.isCommitStateUnknown).toBe(true)
+      }
+    }
+  })
+
+  it('should detect CommitStateUnknownException for 502 errors', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: async () =>
+        JSON.stringify({
+          error: {
+            message: 'Invalid response from the upstream server',
+            type: 'CommitStateUnknownException',
+            code: 502,
+          },
+        }),
+    })
+
+    const client = createFetchClient({
+      baseUrl: 'https://example.com',
+      fetchImpl: mockFetch as unknown as typeof fetch,
+    })
+
+    try {
+      await client.request({
+        method: 'POST',
+        path: '/tables/test',
+      })
+    } catch (error) {
+      expect(error).toBeInstanceOf(IcebergError)
+      if (error instanceof IcebergError) {
+        expect(error.status).toBe(502)
+        expect(error.isCommitStateUnknown).toBe(true)
+      }
+    }
+  })
+
+  it('should detect CommitStateUnknownException for 504 errors', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 504,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: async () =>
+        JSON.stringify({
+          error: {
+            message: 'Gateway timed out during commit',
+            type: 'CommitStateUnknownException',
+            code: 504,
+          },
+        }),
+    })
+
+    const client = createFetchClient({
+      baseUrl: 'https://example.com',
+      fetchImpl: mockFetch as unknown as typeof fetch,
+    })
+
+    try {
+      await client.request({
+        method: 'POST',
+        path: '/tables/test',
+      })
+    } catch (error) {
+      expect(error).toBeInstanceOf(IcebergError)
+      if (error instanceof IcebergError) {
+        expect(error.status).toBe(504)
+        expect(error.isCommitStateUnknown).toBe(true)
+      }
+    }
+  })
+
+  it('should test helper methods isNotFound, isConflict, isAuthenticationTimeout', async () => {
+    const mockFetch404 = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: async () =>
+        JSON.stringify({
+          error: {
+            message: 'Not found',
+            type: 'NoSuchTableException',
+            code: 404,
+          },
+        }),
+    })
+
+    const client404 = createFetchClient({
+      baseUrl: 'https://example.com',
+      fetchImpl: mockFetch404 as unknown as typeof fetch,
+    })
+
+    try {
+      await client404.request({ method: 'GET', path: '/test' })
+    } catch (error) {
+      if (error instanceof IcebergError) {
+        expect(error.isNotFound()).toBe(true)
+        expect(error.isConflict()).toBe(false)
+        expect(error.isAuthenticationTimeout()).toBe(false)
+      }
+    }
+
+    const mockFetch409 = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: async () =>
+        JSON.stringify({
+          error: {
+            message: 'Already exists',
+            type: 'AlreadyExistsException',
+            code: 409,
+          },
+        }),
+    })
+
+    const client409 = createFetchClient({
+      baseUrl: 'https://example.com',
+      fetchImpl: mockFetch409 as unknown as typeof fetch,
+    })
+
+    try {
+      await client409.request({ method: 'POST', path: '/test' })
+    } catch (error) {
+      if (error instanceof IcebergError) {
+        expect(error.isNotFound()).toBe(false)
+        expect(error.isConflict()).toBe(true)
+        expect(error.isAuthenticationTimeout()).toBe(false)
+      }
+    }
+
+    const mockFetch419 = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 419,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      text: async () =>
+        JSON.stringify({
+          error: {
+            message: 'Authentication timeout',
+            type: 'AuthenticationTimeoutException',
+            code: 419,
+          },
+        }),
+    })
+
+    const client419 = createFetchClient({
+      baseUrl: 'https://example.com',
+      fetchImpl: mockFetch419 as unknown as typeof fetch,
+    })
+
+    try {
+      await client419.request({ method: 'GET', path: '/test' })
+    } catch (error) {
+      if (error instanceof IcebergError) {
+        expect(error.isNotFound()).toBe(false)
+        expect(error.isConflict()).toBe(false)
+        expect(error.isAuthenticationTimeout()).toBe(true)
+      }
+    }
   })
 
   it('should merge custom headers with auth headers', async () => {

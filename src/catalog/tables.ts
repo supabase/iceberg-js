@@ -2,6 +2,7 @@ import type { HttpClient } from '../http/types'
 import { IcebergError } from '../errors/IcebergError'
 import type {
   CreateTableRequest,
+  CommitTableResponse,
   ListTablesResponse,
   LoadTableResponse,
   NamespaceIdentifier,
@@ -50,14 +51,17 @@ export class TableOperations {
     return response.data.metadata
   }
 
-  async updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<TableMetadata> {
+  async updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<CommitTableResponse> {
     const response = await this.client.request<LoadTableResponse>({
       method: 'POST',
       path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
       body: request,
     })
 
-    return response.data.metadata
+    return {
+      'metadata-location': response.data['metadata-location'],
+      metadata: response.data.metadata,
+    }
   }
 
   async dropTable(id: TableIdentifier, options?: DropTableRequest): Promise<void> {

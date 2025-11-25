@@ -56,12 +56,16 @@ export function createFetchClient(options: {
 
       if (!res.ok) {
         const errBody = isJson ? (data as IcebergErrorResponse) : undefined
-        throw new IcebergError(errBody?.message ?? `Request failed with status ${res.status}`, {
-          status: res.status,
-          icebergType: errBody?.type,
-          icebergCode: errBody?.code,
-          details: errBody,
-        })
+        const errorDetail = errBody?.error
+        throw new IcebergError(
+          errorDetail?.message ?? `Request failed with status ${res.status}`,
+          {
+            status: res.status,
+            icebergType: errorDetail?.type,
+            icebergCode: errorDetail?.code,
+            details: errBody,
+          }
+        )
       }
 
       return { status: res.status, headers: res.headers, data: data as T }
