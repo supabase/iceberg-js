@@ -11,7 +11,11 @@ export interface TableIdentifier {
   name: string
 }
 
-export type IcebergType =
+/**
+ * Primitive types in Iceberg - all represented as strings.
+ * Parameterized types use string format: decimal(precision,scale) and fixed[length]
+ */
+export type PrimitiveType =
   | 'boolean'
   | 'int'
   | 'long'
@@ -24,15 +28,77 @@ export type IcebergType =
   | 'timestamptz'
   | 'uuid'
   | 'binary'
-  | { type: 'decimal'; precision: number; scale: number }
-  | { type: 'fixed'; length: number }
+  | `decimal(${number},${number})`
+  | `fixed[${number}]`
 
+/**
+ * Struct type - a nested structure containing fields.
+ * Used for nested records within a field.
+ */
+export interface StructType {
+  type: 'struct'
+  fields: StructField[]
+}
+
+/**
+ * List type - an array of elements.
+ */
+export interface ListType {
+  type: 'list'
+  'element-id': number
+  element: IcebergType
+  'element-required': boolean
+}
+
+/**
+ * Map type - a key-value mapping.
+ */
+export interface MapType {
+  type: 'map'
+  'key-id': number
+  key: IcebergType
+  'value-id': number
+  value: IcebergType
+  'value-required': boolean
+}
+
+/**
+ * Union of all Iceberg types.
+ * Can be a primitive type (string) or a complex type (struct, list, map).
+ */
+export type IcebergType = PrimitiveType | StructType | ListType | MapType
+
+/**
+ * Primitive type values for default values.
+ * Represents the possible values for initial-default and write-default.
+ */
+export type PrimitiveTypeValue = boolean | number | string
+
+/**
+ * A field within a struct (used in nested StructType).
+ */
+export interface StructField {
+  id: number
+  name: string
+  type: IcebergType
+  required: boolean
+  doc?: string
+  'initial-default'?: PrimitiveTypeValue
+  'write-default'?: PrimitiveTypeValue
+}
+
+/**
+ * A field within a table schema (top-level).
+ * Equivalent to StructField but kept for backwards compatibility.
+ */
 export interface TableField {
   id: number
   name: string
   type: IcebergType
   required: boolean
   doc?: string
+  'initial-default'?: PrimitiveTypeValue
+  'write-default'?: PrimitiveTypeValue
 }
 
 export interface TableSchema {
