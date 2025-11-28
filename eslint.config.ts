@@ -7,7 +7,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist/**/*'], 'Ignore Build Directory'),
-  globalIgnores(['CLAUDE.md', 'WARP.md', 'tmp/**/*', 'test/compatibility/**/*']),
+  globalIgnores(['CLAUDE.md', 'WARP.md', 'tmp/**/*', 'test/compatibility/**/*', 'docs/**/*']),
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
     plugins: { js },

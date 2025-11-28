@@ -14,6 +14,9 @@ export interface TableIdentifier {
 /**
  * Primitive types in Iceberg - all represented as strings.
  * Parameterized types use string format: decimal(precision,scale) and fixed[length]
+ *
+ * Note: The OpenAPI spec defines PrimitiveType as `type: string`, so any string is valid.
+ * We include known types for autocomplete, plus a catch-all for flexibility.
  */
 export type PrimitiveType =
   | 'boolean'
@@ -30,6 +33,87 @@ export type PrimitiveType =
   | 'binary'
   | `decimal(${number},${number})`
   | `fixed[${number}]`
+  | (string & {}) // catch-all for any format (e.g., "decimal(10, 2)" with spaces) and future types
+
+/**
+ * Regex patterns for parsing parameterized types.
+ * These allow flexible whitespace matching.
+ */
+const DECIMAL_REGEX = /^decimal\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)$/
+const FIXED_REGEX = /^fixed\s*\[\s*(\d+)\s*\]$/
+
+/**
+ * Parse a decimal type string into its components.
+ * Handles any whitespace formatting (e.g., "decimal(10,2)", "decimal(10, 2)", "decimal( 10 , 2 )").
+ *
+ * @param type - The type string to parse
+ * @returns Object with precision and scale, or null if not a valid decimal type
+ */
+export function parseDecimalType(type: string): { precision: number; scale: number } | null {
+  const match = type.match(DECIMAL_REGEX)
+  if (!match) return null
+  return {
+    precision: parseInt(match[1], 10),
+    scale: parseInt(match[2], 10),
+  }
+}
+
+/**
+ * Parse a fixed type string into its length.
+ * Handles any whitespace formatting (e.g., "fixed[16]", "fixed[ 16 ]").
+ *
+ * @param type - The type string to parse
+ * @returns Object with length, or null if not a valid fixed type
+ */
+export function parseFixedType(type: string): { length: number } | null {
+  const match = type.match(FIXED_REGEX)
+  if (!match) return null
+  return {
+    length: parseInt(match[1], 10),
+  }
+}
+
+/**
+ * Check if a type string is a decimal type.
+ */
+export function isDecimalType(type: string): boolean {
+  return DECIMAL_REGEX.test(type)
+}
+
+/**
+ * Check if a type string is a fixed type.
+ */
+export function isFixedType(type: string): boolean {
+  return FIXED_REGEX.test(type)
+}
+
+/**
+ * Compare two Iceberg type strings for equality, ignoring whitespace differences.
+ * This is useful when comparing types from user input vs catalog responses,
+ * as catalogs may normalize whitespace differently.
+ *
+ * @param a - First type string
+ * @param b - Second type string
+ * @returns true if the types are equivalent
+ */
+export function typesEqual(a: string, b: string): boolean {
+  // For decimal types, compare parsed values
+  const decimalA = parseDecimalType(a)
+  const decimalB = parseDecimalType(b)
+  if (decimalA && decimalB) {
+    return decimalA.precision === decimalB.precision && decimalA.scale === decimalB.scale
+  }
+
+  // For fixed types, compare parsed values
+  const fixedA = parseFixedType(a)
+  const fixedB = parseFixedType(b)
+  if (fixedA && fixedB) {
+    return fixedA.length === fixedB.length
+  }
+
+  // For other types, direct string comparison
+  return a === b
+}
 
 /**
  * Struct type - a nested structure containing fields.

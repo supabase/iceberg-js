@@ -73,7 +73,7 @@ sleep 3
 
 # Run the integration test
 echo -e "${GREEN}Running integration test...${NC}\n"
-npx tsx test/integration/test-local-catalog.ts
+npx vitest run --config vitest.config.integration.ts
 
 TEST_EXIT_CODE=$?
 

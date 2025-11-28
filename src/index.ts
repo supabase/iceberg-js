@@ -26,7 +26,14 @@ export type {
   TableMetadata,
 } from './catalog/types'
 
-export { getCurrentSchema } from './catalog/types'
+export {
+  getCurrentSchema,
+  parseDecimalType,
+  parseFixedType,
+  isDecimalType,
+  isFixedType,
+  typesEqual,
+} from './catalog/types'
 
 export type { AuthConfig } from './http/types'
 
