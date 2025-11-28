@@ -1,6 +1,6 @@
 {
   "name": "iceberg-js",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "A small, framework-agnostic JavaScript/TypeScript client for the Apache Iceberg REST Catalog",
   "type": "module",
   "main": "./dist/index.cjs",
