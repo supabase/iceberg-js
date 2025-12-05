@@ -1,10 +1,36 @@
 # iceberg-js
 
+[![GitHub](https://img.shields.io/badge/GitHub-iceberg--js-181717?logo=github)](https://github.com/supabase/iceberg-js)
+[![License](https://img.shields.io/npm/l/nx.svg?style=flat-square)]()
 [![CI](https://github.com/supabase/iceberg-js/actions/workflows/ci.yml/badge.svg)](https://github.com/supabase/iceberg-js/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/iceberg-js.svg)](https://www.npmjs.com/package/iceberg-js)
 [![pkg.pr.new](https://pkg.pr.new/badge/supabase/iceberg-js)](https://pkg.pr.new/~/supabase/iceberg-js)
 
 A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceberg REST Catalog**.
+
+## Motivation
+
+This library provides JavaScript and TypeScript developers with a straightforward way to interact with Apache Iceberg REST Catalogs. It's designed as a thin HTTP wrapper that mirrors the official REST API, making it easy to manage namespaces and tables from any JS/TS environment.
+
+## Goals
+
+- **REST API wrapper**: Provide a 1:1 mapping to the Iceberg REST Catalog API
+- **Type safety**: Full TypeScript support with strongly-typed request/response models
+- **Minimal footprint**: No engine-specific logic, no heavy dependencies
+- **Stability**: Production-ready for catalog management operations
+- **Vendor-agnostic**: Works with any Iceberg REST Catalog implementation
+
+## Non-Goals
+
+This library intentionally does **not** support:
+
+- **Data operations**: Reading or writing table data (Parquet files, etc.)
+- **Query execution**: Use dedicated query engines (Spark, Trino, DuckDB, etc.)
+- **Engine integration**: No Spark, Flink, or other engine-specific code
+- **Advanced features**: Branching, tagging, time travel queries beyond metadata
+- **Views or multi-table transactions**
+
+These boundaries keep the library focused and maintainable. For data operations, pair this library with a query engine that supports Iceberg.
 
 ## Features
 
@@ -340,16 +366,6 @@ const catalog = new IcebergRestCatalog({
 })
 ```
 
-## Limitations (v0.1.0)
-
-This is a catalog client only. The following are **not supported**:
-
-- Reading table data (scanning Parquet files)
-- Writing data to tables
-- Advanced table operations (commits, snapshots, time travel)
-- Views support
-- Multi-table transactions
-
 ## Development
 
 ```bash
@@ -436,4 +452,4 @@ git commit -m "feat!: change auth config structure"
 
 ## Contributing
 
-Contributions are welcome! This library aims to be a minimal, generic client for the Iceberg REST Catalog API.
+Contributions are welcome! Please ensure your contributions align with the library's [goals](#goals) and [non-goals](#non-goals). This library aims to remain a minimal, generic client for the Iceberg REST Catalog API.
