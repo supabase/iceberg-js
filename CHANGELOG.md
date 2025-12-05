@@ -2,24 +2,21 @@
 
 ## [0.8.1](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.8.0...iceberg-js-v0.8.1) (2025-11-28)
 
-
 ### Bug Fixes
 
-* align IcebergType with OpenAPI spec ([#24](https://github.com/supabase/iceberg-js/issues/24)) ([82ed555](https://github.com/supabase/iceberg-js/commit/82ed555f4d9fe2bb9e26736590c87bec3b0f19f0))
+- align IcebergType with OpenAPI spec ([#24](https://github.com/supabase/iceberg-js/issues/24)) ([82ed555](https://github.com/supabase/iceberg-js/commit/82ed555f4d9fe2bb9e26736590c87bec3b0f19f0))
 
 ## [0.8.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.7.0...iceberg-js-v0.8.0) (2025-11-25)
 
-
 ### Features
 
-* match Catalog API return types and error structure ([#22](https://github.com/supabase/iceberg-js/issues/22)) ([87dbaba](https://github.com/supabase/iceberg-js/commit/87dbabac6e8c4cf66183aaf79109722a1339c95c))
+- match Catalog API return types and error structure ([#22](https://github.com/supabase/iceberg-js/issues/22)) ([87dbaba](https://github.com/supabase/iceberg-js/commit/87dbabac6e8c4cf66183aaf79109722a1339c95c))
 
 ## [0.7.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.6.0...iceberg-js-v0.7.0) (2025-11-21)
 
-
 ### Features
 
-* add namespace and table existence checks with creation methods ([#18](https://github.com/supabase/iceberg-js/issues/18)) ([7a5d0e5](https://github.com/supabase/iceberg-js/commit/7a5d0e55d62898557c5dd69e39e8486385e87b11))
+- add namespace and table existence checks with creation methods ([#18](https://github.com/supabase/iceberg-js/issues/18)) ([7a5d0e5](https://github.com/supabase/iceberg-js/commit/7a5d0e55d62898557c5dd69e39e8486385e87b11))
 
 ## [0.6.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.5.1...iceberg-js-v0.6.0) (2025-11-21)
 

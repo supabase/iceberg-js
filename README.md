@@ -318,15 +318,15 @@ The following Iceberg primitive types are supported:
 
 This package is built to work in **all** Node.js and JavaScript environments:
 
-| Environment         | Module System        | Import Method                           | Status                |
-| ------------------- | -------------------- | --------------------------------------- | --------------------- |
-| Node.js ESM         | `"type": "module"`   | `import { ... } from 'iceberg-js'`      | ✅ Fully supported    |
-| Node.js CommonJS    | Default              | `const { ... } = require('iceberg-js')` | ✅ Fully supported    |
-| TypeScript ESM      | `module: "ESNext"`   | `import { ... } from 'iceberg-js'`      | ✅ Full type support  |
-| TypeScript CommonJS | `module: "CommonJS"` | `import { ... } from 'iceberg-js'`      | ✅ Full type support  |
-| Bundlers            | Any                  | Webpack, Vite, esbuild, Rollup, etc.    | ✅ Auto-detected      |
-| Browsers            | ESM                  | `<script type="module">`                | ✅ Modern browsers    |
-| Deno                | ESM                  | `import` from npm:                      | ✅ With npm specifier |
+| Environment         | Module System        | Import Method                           | Status             |
+| ------------------- | -------------------- | --------------------------------------- | ------------------ |
+| Node.js ESM         | `"type": "module"`   | `import { ... } from 'iceberg-js'`      | Fully supported    |
+| Node.js CommonJS    | Default              | `const { ... } = require('iceberg-js')` | Fully supported    |
+| TypeScript ESM      | `module: "ESNext"`   | `import { ... } from 'iceberg-js'`      | Full type support  |
+| TypeScript CommonJS | `module: "CommonJS"` | `import { ... } from 'iceberg-js'`      | Full type support  |
+| Bundlers            | Any                  | Webpack, Vite, esbuild, Rollup, etc.    | Auto-detected      |
+| Browsers            | ESM                  | `<script type="module">`                | Modern browsers    |
+| Deno                | ESM                  | `import` from npm:                      | With npm specifier |
 
 **Package exports:**
 

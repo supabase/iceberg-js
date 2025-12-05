@@ -139,7 +139,10 @@ export class IcebergRestCatalog {
    * console.log(response.properties); // { owner: 'data-team', ... }
    * ```
    */
-  async createNamespace(id: NamespaceIdentifier, metadata?: NamespaceMetadata): Promise<CreateNamespaceResponse> {
+  async createNamespace(
+    id: NamespaceIdentifier,
+    metadata?: NamespaceMetadata
+  ): Promise<CreateNamespaceResponse> {
     return this.namespaceOps.createNamespace(id, metadata)
   }
 
@@ -250,7 +253,10 @@ export class IcebergRestCatalog {
    * console.log(response.metadata); // TableMetadata object
    * ```
    */
-  async updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<CommitTableResponse> {
+  async updateTable(
+    id: TableIdentifier,
+    request: UpdateTableRequest
+  ): Promise<CommitTableResponse> {
     return this.tableOps.updateTable(id, request)
   }
 

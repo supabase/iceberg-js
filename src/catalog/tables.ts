@@ -51,7 +51,10 @@ export class TableOperations {
     return response.data.metadata
   }
 
-  async updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<CommitTableResponse> {
+  async updateTable(
+    id: TableIdentifier,
+    request: UpdateTableRequest
+  ): Promise<CommitTableResponse> {
     const response = await this.client.request<LoadTableResponse>({
       method: 'POST',
       path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
