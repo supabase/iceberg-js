@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.8.0...iceberg-js-v0.8.1) (2025-11-28)
+
+
+### Bug Fixes
+
+* align IcebergType with OpenAPI spec ([#24](https://github.com/supabase/iceberg-js/issues/24)) ([82ed555](https://github.com/supabase/iceberg-js/commit/82ed555f4d9fe2bb9e26736590c87bec3b0f19f0))
+
 ## [0.8.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.7.0...iceberg-js-v0.8.0) (2025-11-25)
 
 
