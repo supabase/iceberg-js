@@ -1,6 +1,7 @@
 # iceberg-js
 
 [![GitHub](https://img.shields.io/badge/GitHub-iceberg--js-181717?logo=github)](https://github.com/supabase/iceberg-js)
+[![Docs](https://img.shields.io/badge/docs-API%20Reference-blue?logo=readthedocs)](https://supabase.github.io/iceberg-js/)
 [![License](https://img.shields.io/npm/l/nx.svg?style=flat-square)]()
 [![CI](https://github.com/supabase/iceberg-js/actions/workflows/ci.yml/badge.svg)](https://github.com/supabase/iceberg-js/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/iceberg-js.svg)](https://www.npmjs.com/package/iceberg-js)

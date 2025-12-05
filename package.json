@@ -52,7 +52,7 @@
   "bugs": {
     "url": "https://github.com/supabase/iceberg-js/issues"
   },
-  "homepage": "https://github.com/supabase/iceberg-js#readme",
+  "homepage": "https://supabase.github.io/iceberg-js/",
   "publishConfig": {
     "access": "public"
   },
