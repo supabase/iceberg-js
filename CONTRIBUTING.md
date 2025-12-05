@@ -1,6 +1,6 @@
-# Contributing to iceberg-js
+# Contributing to `iceberg-js`
 
-Thank you for your interest in contributing to iceberg-js! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to `iceberg-js`! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ Thank you for your interest in contributing to iceberg-js! This document provide
 
 ## Getting Started
 
-iceberg-js`` is a TypeScript library that provides a client for the Apache Iceberg REST Catalog API. Before contributing, please:
+`iceberg-js` is a TypeScript library that provides a client for the Apache Iceberg REST Catalog API. Before contributing, please:
 
 1. Read the [README.md](./README.md) to understand the project's scope and goals
 2. Read our [Code of Conduct](https://github.com/supabase/.github/blob/main/CODE_OF_CONDUCT.md)
@@ -365,4 +365,4 @@ Publishing is fully automated via GitHub Actions:
 
 ## License
 
-By contributing to iceberg-js, you agree that your contributions will be licensed under the MIT License.
+By contributing to `iceberg-js`, you agree that your contributions will be licensed under the MIT License.
