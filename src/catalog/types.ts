@@ -175,15 +175,7 @@ export interface StructField {
  * A field within a table schema (top-level).
  * Equivalent to StructField but kept for backwards compatibility.
  */
-export interface TableField {
-  id: number
-  name: string
-  type: IcebergType
-  required: boolean
-  doc?: string
-  'initial-default'?: PrimitiveTypeValue
-  'write-default'?: PrimitiveTypeValue
-}
+export interface TableField extends StructField {}
 
 export interface TableSchema {
   type: 'struct'
@@ -193,8 +185,8 @@ export interface TableSchema {
 }
 
 export interface PartitionField {
-  source_id: number
-  field_id: number
+  'source-id': number
+  'field-id': number
   name: string
   transform: string
 }
@@ -205,10 +197,10 @@ export interface PartitionSpec {
 }
 
 export interface SortField {
-  source_id: number
+  'source-id': number
   transform: string
   direction: 'asc' | 'desc'
-  null_order: 'nulls-first' | 'nulls-last'
+  'null-order': 'nulls-first' | 'nulls-last'
 }
 
 export interface SortOrder {
