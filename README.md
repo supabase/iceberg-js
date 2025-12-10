@@ -247,7 +247,7 @@ const metadata = await catalog.loadTable({
 })
 ```
 
-#### `updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<TableMetadata>`
+#### `updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<CommitTableResponse>`
 
 Update table metadata (schema, partition spec, or properties).
 
