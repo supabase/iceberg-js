@@ -57,8 +57,8 @@ async function main() {
           'spec-id': 0,
           fields: [
             {
-              source_id: 3, // timestamp field
-              field_id: 1000,
+              'source-id': 3, // timestamp field
+              'field-id': 1000,
               name: 'event_day',
               transform: 'day',
             },
