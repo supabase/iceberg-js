@@ -218,7 +218,7 @@ export class IcebergRestCatalog {
    *     'partition-spec': {
    *       'spec-id': 0,
    *       fields: [
-   *         { source_id: 2, field_id: 1000, name: 'ts_day', transform: 'day' }
+   *         { 'source-id': 2, 'field-id': 1000, name: 'ts_day', transform: 'day' }
    *       ]
    *     }
    *   }
