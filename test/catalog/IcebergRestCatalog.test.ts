@@ -299,5 +299,65 @@ describe('IcebergRestCatalog', () => {
         )
       })
     })
+
+    describe('configuration API failed', () => {
+      it('should throw error when config endpoint returns 401', async () => {
+        const catalog = createCatalog({})
+
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse(
+            {
+              error: {
+                message: 'Unauthorized',
+                type: 'UnauthorizedException',
+                code: 401,
+              },
+            },
+            401
+          )
+        )
+
+        await expect(catalog.listNamespaces()).rejects.toThrow('Unauthorized')
+      })
+
+      it('should throw error when config endpoint returns 404', async () => {
+        const catalog = createCatalog({})
+
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse(
+            {
+              error: {
+                message: 'Configuration endpoint not found',
+                type: 'NoSuchResourceException',
+                code: 404,
+              },
+            },
+            404
+          )
+        )
+        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
+
+        await expect(catalog.listNamespaces()).rejects.toThrow('Configuration endpoint not found')
+      })
+
+      it('should throw error when config endpoint returns 500', async () => {
+        const catalog = createCatalog({})
+
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse(
+            {
+              error: {
+                message: 'Internal Server Error',
+                type: 'InternalServerException',
+                code: 500,
+              },
+            },
+            500
+          )
+        )
+
+        await expect(catalog.listNamespaces()).rejects.toThrow('Internal Server Error')
+      })
+    })
   })
 })
