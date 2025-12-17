@@ -81,7 +81,7 @@ export class IcebergRestCatalog {
 
   private namespaceOps: NamespaceOperations
   private tableOps: TableOperations
-  private warehouseEnabled: boolean = false
+  private configFetched: boolean = false
 
   /**
    * Creates a new Iceberg REST Catalog client.
@@ -117,16 +117,14 @@ export class IcebergRestCatalog {
    * This is called automatically before each operation (lazy initialization).
    */
   private async ensureInitialized(): Promise<void> {
-    if (this.warehouse) {
-      await this.useWarehouse()
-    }
+    await this.fetchConfig()
   }
 
   /**
-   * Configures the catalog client with warehouse-specific settings from the server.
+   * Call Configuration API to get catalog configuration properties from the server.
    */
-  private async useWarehouse(): Promise<void> {
-    if (this.warehouseEnabled) {
+  private async fetchConfig(): Promise<void> {
+    if (this.configFetched) {
       return
     }
 
@@ -147,7 +145,7 @@ export class IcebergRestCatalog {
       this.tableOps = new TableOperations(this.client, prefix, this.accessDelegation)
     }
 
-    this.warehouseEnabled = true
+    this.configFetched = true
   }
 
   /**
