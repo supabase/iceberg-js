@@ -299,9 +299,10 @@ export interface CommitTableResponse {
  * Response from the catalog configuration endpoint (GET /v1/config).
  */
 export interface CatalogConfig {
-  defaults?: Record<string, string>
-  overrides?: Record<string, string>
+  defaults: Record<string, string>
+  overrides: Record<string, string>
   endpoints?: string[]
+  'idempotency-key-lifetime'?: string
 }
 
 /**

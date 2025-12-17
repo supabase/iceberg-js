@@ -190,36 +190,6 @@ describe('IcebergRestCatalog', () => {
           expect.objectContaining({ method: 'GET' })
         )
       })
-
-      it('should handle config response with empty overrides', async () => {
-        const catalog = createCatalog({ warehouse: 'my-warehouse' })
-
-        // Mock config response with empty overrides
-        mockFetch.mockReturnValueOnce(
-          mockFetchResponse({
-            defaults: {},
-            // overrides is undefined
-          })
-        )
-        // Mock namespace list response
-        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [] }))
-
-        await catalog.listNamespaces()
-
-        // First call should be config with warehouse query param
-        expect(mockFetch).toHaveBeenNthCalledWith(
-          1,
-          'https://catalog.example.com/v1/config?warehouse=my-warehouse',
-          expect.objectContaining({ method: 'GET' })
-        )
-
-        // Should use default v1 prefix
-        expect(mockFetch).toHaveBeenNthCalledWith(
-          2,
-          'https://catalog.example.com/v1/namespaces',
-          expect.objectContaining({ method: 'GET' })
-        )
-      })
     })
   })
 

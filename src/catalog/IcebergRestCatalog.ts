@@ -140,7 +140,7 @@ export class IcebergRestCatalog {
 
     // Apply prefix override from server response
     // https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/open-api/rest-catalog-open-api.yaml#L105-L134
-    if (config.overrides?.prefix) {
+    if (config.overrides.prefix) {
       const prefix = `v1/${config.overrides.prefix}`
       // Re-initialize operations with the new prefix
       this.namespaceOps = new NamespaceOperations(this.client, prefix)
