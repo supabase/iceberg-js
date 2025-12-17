@@ -126,7 +126,6 @@ export class IcebergRestCatalog {
       return
     }
 
-    // https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/open-api/rest-catalog-open-api.yaml#L65
     const response = await this.client.request<CatalogConfig>({
       method: 'GET',
       path: `v1/config`,
