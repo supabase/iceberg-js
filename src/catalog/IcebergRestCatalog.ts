@@ -76,12 +76,14 @@ export interface IcebergRestCatalogOptions {
  */
 export class IcebergRestCatalog {
   private readonly client: HttpClient
-  private readonly warehouse?: string
   private readonly accessDelegation?: string
+
+  // https://iceberg.apache.org/docs/latest/configuration/#catalog-properties
+  private catalogProperties: Record<string, string>
+  private configFetched: boolean = false
 
   private namespaceOps: NamespaceOperations
   private tableOps: TableOperations
-  private configFetched: boolean = false
 
   /**
    * Creates a new Iceberg REST Catalog client.
@@ -89,15 +91,6 @@ export class IcebergRestCatalog {
    * @param options - Configuration options for the catalog client
    */
   constructor(options: IcebergRestCatalogOptions) {
-    let prefix = 'v1'
-    if (options.catalogName) {
-      prefix += `/${options.catalogName}`
-    }
-
-    if (options.warehouse) {
-      this.warehouse = options.warehouse
-    }
-
     const baseUrl = options.baseUrl.endsWith('/') ? options.baseUrl : `${options.baseUrl}/`
     this.client = createFetchClient({
       baseUrl,
@@ -105,11 +98,16 @@ export class IcebergRestCatalog {
       fetchImpl: options.fetch,
     })
 
+    this.catalogProperties = {
+      ...(options.catalogName ? { prefix: options.catalogName } : {}),
+      ...(options.warehouse ? { warehouse: options.warehouse } : {}),
+    }
+
     // Format accessDelegation as comma-separated string per spec
     this.accessDelegation = options.accessDelegation?.join(',')
 
-    this.namespaceOps = new NamespaceOperations(this.client, prefix)
-    this.tableOps = new TableOperations(this.client, prefix, this.accessDelegation)
+    this.namespaceOps = new NamespaceOperations(this.client, options.catalogName)
+    this.tableOps = new TableOperations(this.client, options.catalogName, this.accessDelegation)
   }
 
   /**
@@ -132,18 +130,15 @@ export class IcebergRestCatalog {
     const response = await this.client.request<CatalogConfig>({
       method: 'GET',
       path: `v1/config`,
-      query: { warehouse: this.warehouse },
+      query: { warehouse: this.catalogProperties['warehouse'] },
     })
     const config = response.data
 
-    // Apply prefix override from server response
-    // https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/open-api/rest-catalog-open-api.yaml#L105-L134
-    if (config.overrides.prefix) {
-      const prefix = `v1/${config.overrides.prefix}`
-      // Re-initialize operations with the new prefix
-      this.namespaceOps = new NamespaceOperations(this.client, prefix)
-      this.tableOps = new TableOperations(this.client, prefix, this.accessDelegation)
-    }
+    this.catalogProperties = { ...config.defaults, ...this.catalogProperties, ...config.overrides }
+
+    // Re-initialize operations with the final catalog properties
+    this.namespaceOps = new NamespaceOperations(this.client, this.catalogProperties['prefix'])
+    this.tableOps = new TableOperations(this.client, this.catalogProperties['prefix'], this.accessDelegation)
 
     this.configFetched = true
   }
