@@ -10,13 +10,13 @@ describe('IcebergRestCatalog', () => {
 
   const createCatalog = (options: {
     baseUrl?: string
-    warehouse?: string
     catalogName?: string
+    warehouse?: string
   }) => {
     return new IcebergRestCatalog({
       baseUrl: options.baseUrl ?? 'https://catalog.example.com',
-      warehouse: options.warehouse,
       catalogName: options.catalogName,
+      warehouse: options.warehouse,
       fetch: mockFetch as unknown as typeof fetch,
     })
   }
@@ -30,71 +30,15 @@ describe('IcebergRestCatalog', () => {
     })
   }
 
-  describe('warehouse option', () => {
-    describe('with warehouse', () => {
-      it('should call configuration api with warehouse query param on first operation', async () => {
-        const catalog = createCatalog({ warehouse: 'my-warehouse' })
+  describe('fetchConfig', () => {
+    describe('lazy initialization', () => {
+      it('should only call once', async () => {
+        const catalog = createCatalog({})
 
         mockFetch.mockReturnValueOnce(
           mockFetchResponse({
             defaults: {},
             overrides: {},
-          })
-        )
-        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['default']] }))
-
-        await catalog.listNamespaces()
-
-        expect(mockFetch).toHaveBeenCalledTimes(2)
-        expect(mockFetch).toHaveBeenNthCalledWith(
-          1,
-          'https://catalog.example.com/v1/config?warehouse=my-warehouse',
-          expect.objectContaining({ method: 'GET' })
-        )
-        expect(mockFetch).toHaveBeenNthCalledWith(
-          2,
-          'https://catalog.example.com/v1/namespaces',
-          expect.objectContaining({ method: 'GET' })
-        )
-      })
-
-      it('should apply prefix override from config response', async () => {
-        const catalog = createCatalog({ warehouse: 'my-warehouse' })
-
-        mockFetch.mockReturnValueOnce(
-          mockFetchResponse({
-            defaults: {},
-            overrides: {
-              prefix: 'account123/bucket456',
-            },
-          })
-        )
-        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
-
-        await catalog.listNamespaces()
-
-        expect(mockFetch).toHaveBeenCalledTimes(2)
-        expect(mockFetch).toHaveBeenNthCalledWith(
-          1,
-          'https://catalog.example.com/v1/config?warehouse=my-warehouse',
-          expect.objectContaining({ method: 'GET' })
-        )
-        expect(mockFetch).toHaveBeenNthCalledWith(
-          2,
-          'https://catalog.example.com/v1/account123/bucket456/namespaces',
-          expect.objectContaining({ method: 'GET' })
-        )
-      })
-
-      it('should only call config once (lazy initialization)', async () => {
-        const catalog = createCatalog({ warehouse: 'my-warehouse' })
-
-        mockFetch.mockReturnValueOnce(
-          mockFetchResponse({
-            defaults: {},
-            overrides: {
-              prefix: 'account123/bucket456',
-            },
           })
         )
         mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
@@ -106,38 +50,7 @@ describe('IcebergRestCatalog', () => {
         expect(mockFetch).toHaveBeenCalledTimes(3)
         expect(mockFetch).toHaveBeenNthCalledWith(
           1,
-          'https://catalog.example.com/v1/config?warehouse=my-warehouse',
-          expect.objectContaining({ method: 'GET' })
-        )
-        expect(mockFetch).toHaveBeenNthCalledWith(
-          2,
-          'https://catalog.example.com/v1/account123/bucket456/namespaces',
-          expect.objectContaining({ method: 'GET' })
-        )
-        expect(mockFetch).toHaveBeenNthCalledWith(
-          3,
-          'https://catalog.example.com/v1/account123/bucket456/namespaces/analytics/tables',
-          expect.objectContaining({ method: 'GET' })
-        )
-      })
-
-      it('should work without prefix in config response', async () => {
-        const catalog = createCatalog({ warehouse: 'my-warehouse' })
-
-        mockFetch.mockReturnValueOnce(
-          mockFetchResponse({
-            defaults: { 'some-default': 'value' },
-            overrides: { 'some-override': 'value' },
-            // No prefix key
-          })
-        )
-        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [] }))
-
-        await catalog.listNamespaces()
-
-        expect(mockFetch).toHaveBeenNthCalledWith(
-          1,
-          'https://catalog.example.com/v1/config?warehouse=my-warehouse',
+          'https://catalog.example.com/v1/config',
           expect.objectContaining({ method: 'GET' })
         )
         expect(mockFetch).toHaveBeenNthCalledWith(
@@ -145,12 +58,17 @@ describe('IcebergRestCatalog', () => {
           'https://catalog.example.com/v1/namespaces',
           expect.objectContaining({ method: 'GET' })
         )
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          3,
+          'https://catalog.example.com/v1/namespaces/analytics/tables',
+          expect.objectContaining({ method: 'GET' })
+        )
       })
     })
 
-    describe('without warehouse', () => {
-      it('should call configuration api even when warehouse is not provided', async () => {
-        const catalog = createCatalog({})
+    describe('catalogName option', () => {
+      it('should use catalogName as the prefix catalog property', async () => {
+        const catalog = createCatalog({ catalogName: 'prod' })
 
         mockFetch.mockReturnValueOnce(
           mockFetchResponse({
@@ -170,100 +88,216 @@ describe('IcebergRestCatalog', () => {
         )
         expect(mockFetch).toHaveBeenNthCalledWith(
           2,
+          'https://catalog.example.com/v1/prod/namespaces',
+          expect.objectContaining({ method: 'GET' })
+        )
+      })
+    })
+
+    describe('warehouse option', () => {
+      it('should call configuration api with warehouse query param', async () => {
+        const catalog = createCatalog({ warehouse: 'my-warehouse' })
+
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse({
+            defaults: {},
+            overrides: {},
+          })
+        )
+        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['default']] }))
+
+        await catalog.listNamespaces()
+
+        expect(mockFetch).toHaveBeenCalledTimes(2)
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          1,
+          'https://catalog.example.com/v1/config?warehouse=my-warehouse',
+          expect.objectContaining({ method: 'GET' })
+        )
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          2,
           'https://catalog.example.com/v1/namespaces',
           expect.objectContaining({ method: 'GET' })
         )
       })
     })
-  })
 
-  describe('catalogName option', () => {
-    it('should use catalogName as prefix when provided without warehouse', async () => {
-      const catalog = createCatalog({ catalogName: 'prod' })
-
-      mockFetch.mockReturnValueOnce(
-        mockFetchResponse({
-          defaults: {},
-          overrides: {},
+    describe('catalogName + warehouse combination', () => {
+      it('should use the prefix in overrides response as the prefix catalog property', async () => {
+        const catalog = createCatalog({
+          catalogName: 'initial-catalog',
+          warehouse: 'my-warehouse',
         })
-      )
-      mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['default']] }))
 
-      await catalog.listNamespaces()
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse({
+            defaults: {},
+            overrides: {
+              prefix: 'server-provided-prefix',
+            },
+          })
+        )
+        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
 
-      expect(mockFetch).toHaveBeenCalledTimes(2)
-      expect(mockFetch).toHaveBeenNthCalledWith(
-        1,
-        'https://catalog.example.com/v1/config',
-        expect.objectContaining({ method: 'GET' })
-      )
-      expect(mockFetch).toHaveBeenNthCalledWith(
-        2,
-        'https://catalog.example.com/v1/prod/namespaces',
-        expect.objectContaining({ method: 'GET' })
-      )
-    })
-  })
+        await catalog.listNamespaces()
 
-  describe('warehouse + catalogName combination', () => {
-    it('should override catalogName with config prefix when warehouse returns prefix', async () => {
-      const catalog = createCatalog({
-        warehouse: 'my-warehouse',
-        catalogName: 'initial-catalog',
+        expect(mockFetch).toHaveBeenCalledTimes(2)
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          1,
+          'https://catalog.example.com/v1/config?warehouse=my-warehouse',
+          expect.objectContaining({ method: 'GET' })
+        )
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          2,
+          'https://catalog.example.com/v1/server-provided-prefix/namespaces',
+          expect.objectContaining({ method: 'GET' })
+        )
       })
 
-      mockFetch.mockReturnValueOnce(
-        mockFetchResponse({
-          defaults: {},
-          overrides: {
-            prefix: 'server-provided-prefix',
-          },
+      it('should use catalogName as the prefix catalog property if the prefix in overrieds does not exist', async () => {
+        const catalog = createCatalog({
+          catalogName: 'initial-catalog',
+          warehouse: 'my-warehouse',
         })
-      )
-      mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
 
-      await catalog.listNamespaces()
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse({
+            defaults: {},
+            overrides: {},
+          })
+        )
+        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
 
-      expect(mockFetch).toHaveBeenCalledTimes(2)
-      expect(mockFetch).toHaveBeenNthCalledWith(
-        1,
-        'https://catalog.example.com/v1/config?warehouse=my-warehouse',
-        expect.objectContaining({ method: 'GET' })
-      )
-      expect(mockFetch).toHaveBeenNthCalledWith(
-        2,
-        'https://catalog.example.com/v1/server-provided-prefix/namespaces',
-        expect.objectContaining({ method: 'GET' })
-      )
+        await catalog.listNamespaces()
+
+        expect(mockFetch).toHaveBeenCalledTimes(2)
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          1,
+          'https://catalog.example.com/v1/config?warehouse=my-warehouse',
+          expect.objectContaining({ method: 'GET' })
+        )
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          2,
+          'https://catalog.example.com/v1/initial-catalog/namespaces',
+          expect.objectContaining({ method: 'GET' })
+        )
+      })
     })
 
-    it('should keep catalogName when warehouse config has no prefix override', async () => {
-      const catalog = createCatalog({
-        warehouse: 'my-warehouse',
-        catalogName: 'initial-catalog',
+    describe('catalog properties merge priority', () => {
+      it('use default properties if neither client nor server provided properties', async () => {
+        const catalog = createCatalog({})
+
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse({
+            defaults: {
+              prefix: 'default-prefix'
+            },
+            overrides: {},
+          })
+        )
+        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
+
+        await catalog.listNamespaces()
+
+        expect(mockFetch).toHaveBeenCalledTimes(2)
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          1,
+          'https://catalog.example.com/v1/config',
+          expect.objectContaining({ method: 'GET' })
+        )
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          2,
+          'https://catalog.example.com/v1/default-prefix/namespaces',
+          expect.objectContaining({ method: 'GET' })
+        )
       })
 
-      mockFetch.mockReturnValueOnce(
-        mockFetchResponse({
-          defaults: {},
-          overrides: {},
-        })
-      )
-      mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
+      it('client-provided properties should take precedence over default properties', async () => {
+        const catalog = createCatalog({ catalogName: 'client-provided-prefix' })
 
-      await catalog.listNamespaces()
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse({
+            defaults: {
+              prefix: 'default-prefix'
+            },
+            overrides: {},
+          })
+        )
+        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
 
-      expect(mockFetch).toHaveBeenCalledTimes(2)
-      expect(mockFetch).toHaveBeenNthCalledWith(
-        1,
-        'https://catalog.example.com/v1/config?warehouse=my-warehouse',
-        expect.objectContaining({ method: 'GET' })
-      )
-      expect(mockFetch).toHaveBeenNthCalledWith(
-        2,
-        'https://catalog.example.com/v1/initial-catalog/namespaces',
-        expect.objectContaining({ method: 'GET' })
-      )
+        await catalog.listNamespaces()
+
+        expect(mockFetch).toHaveBeenCalledTimes(2)
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          1,
+          'https://catalog.example.com/v1/config',
+          expect.objectContaining({ method: 'GET' })
+        )
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          2,
+          'https://catalog.example.com/v1/client-provided-prefix/namespaces',
+          expect.objectContaining({ method: 'GET' })
+        )
+      })
+
+      it('server-provided properties should take precedence over default properties', async () => {
+        const catalog = createCatalog({})
+
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse({
+            defaults: {
+              prefix: 'default-prefix'
+            },
+            overrides: {
+              prefix: 'server-provided-prefix'
+            },
+          })
+        )
+        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
+
+        await catalog.listNamespaces()
+
+        expect(mockFetch).toHaveBeenCalledTimes(2)
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          1,
+          'https://catalog.example.com/v1/config',
+          expect.objectContaining({ method: 'GET' })
+        )
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          2,
+          'https://catalog.example.com/v1/server-provided-prefix/namespaces',
+          expect.objectContaining({ method: 'GET' })
+        )
+      })
+
+      it('server-provided properties should take precedence over client-provided properties', async () => {
+        const catalog = createCatalog({ catalogName: 'client-provided-prefix' })
+
+        mockFetch.mockReturnValueOnce(
+          mockFetchResponse({
+            defaults: {},
+            overrides: {
+              prefix: 'server-provided-prefix'
+            },
+          })
+        )
+        mockFetch.mockReturnValueOnce(mockFetchResponse({ namespaces: [['analytics']] }))
+
+        await catalog.listNamespaces()
+
+        expect(mockFetch).toHaveBeenCalledTimes(2)
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          1,
+          'https://catalog.example.com/v1/config',
+          expect.objectContaining({ method: 'GET' })
+        )
+        expect(mockFetch).toHaveBeenNthCalledWith(
+          2,
+          'https://catalog.example.com/v1/server-provided-prefix/namespaces',
+          expect.objectContaining({ method: 'GET' })
+        )
+      })
     })
   })
 })

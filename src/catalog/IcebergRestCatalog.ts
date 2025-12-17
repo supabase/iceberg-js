@@ -29,10 +29,10 @@ export type AccessDelegation = 'vended-credentials' | 'remote-signing'
 export interface IcebergRestCatalogOptions {
   /** Base URL of the Iceberg REST Catalog API */
   baseUrl: string
-  /** Optional warehouse location or identifier to request */
-  warehouse?: string
   /** Optional catalog name prefix for multi-catalog servers */
   catalogName?: string
+  /** Optional warehouse location or identifier to request */
+  warehouse?: string
   /** Authentication configuration */
   auth?: AuthConfig
   /** Custom fetch implementation (defaults to globalThis.fetch) */
