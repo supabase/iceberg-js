@@ -52,7 +52,7 @@ describe('TableOperations', () => {
         },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       const result = await ops.listTables({ namespace: ['analytics'] })
 
       expect(result).toEqual([
@@ -61,7 +61,7 @@ describe('TableOperations', () => {
       ])
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics/tables',
+        path: 'v1/namespaces/analytics/tables',
       })
     })
 
@@ -73,12 +73,12 @@ describe('TableOperations', () => {
         data: { identifiers: [] },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.listTables({ namespace: ['analytics', 'prod'] })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics\x1Fprod/tables',
+        path: 'v1/namespaces/analytics\x1Fprod/tables',
       })
     })
 
@@ -90,12 +90,12 @@ describe('TableOperations', () => {
         data: { identifiers: [] },
       })
 
-      const ops = new TableOperations(mockClient, '/v1/catalog1')
+      const ops = new TableOperations(mockClient, 'catalog1')
       await ops.listTables({ namespace: ['analytics'] })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/catalog1/namespaces/analytics/tables',
+        path: 'v1/catalog1/namespaces/analytics/tables',
       })
     })
   })
@@ -111,7 +111,7 @@ describe('TableOperations', () => {
         },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       const result = await ops.createTable(
         { namespace: ['analytics'] },
         {
@@ -134,7 +134,7 @@ describe('TableOperations', () => {
       expect(result).toEqual(mockTableMetadata)
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces/analytics/tables',
+        path: 'v1/namespaces/analytics/tables',
         body: expect.objectContaining({
           name: 'events',
           schema: expect.any(Object),
@@ -151,7 +151,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.createTable(
         { namespace: ['analytics'] },
         {
@@ -177,7 +177,7 @@ describe('TableOperations', () => {
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces/analytics/tables',
+        path: 'v1/namespaces/analytics/tables',
         body: expect.objectContaining({
           'partition-spec': {
             'spec-id': 0,
@@ -203,7 +203,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.createTable(
         { namespace: ['analytics'] },
         {
@@ -222,7 +222,7 @@ describe('TableOperations', () => {
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces/analytics/tables',
+        path: 'v1/namespaces/analytics/tables',
         body: expect.objectContaining({
           properties: {
             'write.format.default': 'parquet',
@@ -245,13 +245,13 @@ describe('TableOperations', () => {
         },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       const result = await ops.loadTable({ namespace: ['analytics'], name: 'events' })
 
       expect(result).toEqual(mockTableMetadata)
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics/tables/events',
+        path: 'v1/namespaces/analytics/tables/events',
         headers: {},
       })
     })
@@ -264,12 +264,12 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.loadTable({ namespace: ['analytics', 'prod'], name: 'events' })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+        path: 'v1/namespaces/analytics\x1Fprod/tables/events',
         headers: {},
       })
     })
@@ -287,7 +287,7 @@ describe('TableOperations', () => {
         },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       const result = await ops.updateTable(
         { namespace: ['analytics'], name: 'events' },
         {
@@ -301,7 +301,7 @@ describe('TableOperations', () => {
       })
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces/analytics/tables/events',
+        path: 'v1/namespaces/analytics/tables/events',
         body: {
           properties: { 'read.split.target-size': '134217728' },
         },
@@ -319,7 +319,7 @@ describe('TableOperations', () => {
         },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.updateTable(
         { namespace: ['analytics'], name: 'events' },
         {
@@ -337,7 +337,7 @@ describe('TableOperations', () => {
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces/analytics/tables/events',
+        path: 'v1/namespaces/analytics/tables/events',
         body: expect.objectContaining({
           schema: expect.objectContaining({
             'schema-id': 1,
@@ -356,12 +356,12 @@ describe('TableOperations', () => {
         data: undefined,
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.dropTable({ namespace: ['analytics'], name: 'events' })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
-        path: '/v1/namespaces/analytics/tables/events',
+        path: 'v1/namespaces/analytics/tables/events',
         query: { purgeRequested: 'false' },
       })
     })
@@ -374,12 +374,12 @@ describe('TableOperations', () => {
         data: undefined,
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.dropTable({ namespace: ['analytics'], name: 'events' }, { purge: true })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
-        path: '/v1/namespaces/analytics/tables/events',
+        path: 'v1/namespaces/analytics/tables/events',
         query: { purgeRequested: 'true' },
       })
     })
@@ -392,12 +392,12 @@ describe('TableOperations', () => {
         data: undefined,
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.dropTable({ namespace: ['analytics', 'prod'], name: 'events' })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
-        path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+        path: 'v1/namespaces/analytics\x1Fprod/tables/events',
         query: { purgeRequested: 'false' },
       })
     })
@@ -412,13 +412,13 @@ describe('TableOperations', () => {
         data: undefined,
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       const result = await ops.tableExists({ namespace: ['analytics'], name: 'events' })
 
       expect(result).toBe(true)
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'HEAD',
-        path: '/v1/namespaces/analytics/tables/events',
+        path: 'v1/namespaces/analytics/tables/events',
         headers: {},
       })
     })
@@ -429,7 +429,7 @@ describe('TableOperations', () => {
         new IcebergError('Not Found', { status: 404 })
       )
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       const result = await ops.tableExists({ namespace: ['analytics'], name: 'events' })
 
       expect(result).toBe(false)
@@ -443,12 +443,12 @@ describe('TableOperations', () => {
         data: undefined,
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.tableExists({ namespace: ['analytics', 'prod'], name: 'events' })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'HEAD',
-        path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+        path: 'v1/namespaces/analytics\x1Fprod/tables/events',
         headers: {},
       })
     })
@@ -458,7 +458,7 @@ describe('TableOperations', () => {
       const error = new IcebergError('Server Error', { status: 500 })
       vi.mocked(mockClient.request).mockRejectedValue(error)
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
 
       await expect(ops.tableExists({ namespace: ['analytics'], name: 'events' })).rejects.toThrow(
         error
@@ -475,7 +475,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       const result = await ops.createTableIfNotExists(
         { namespace: ['analytics'] },
         {
@@ -498,7 +498,7 @@ describe('TableOperations', () => {
       expect(result).toEqual(mockTableMetadata)
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces/analytics/tables',
+        path: 'v1/namespaces/analytics/tables',
         body: expect.objectContaining({
           name: 'events',
           schema: expect.any(Object),
@@ -517,7 +517,7 @@ describe('TableOperations', () => {
           data: { metadata: mockTableMetadata },
         })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       const result = await ops.createTableIfNotExists(
         { namespace: ['analytics'] },
         {
@@ -534,7 +534,7 @@ describe('TableOperations', () => {
       expect(mockClient.request).toHaveBeenCalledTimes(2)
       expect(mockClient.request).toHaveBeenNthCalledWith(2, {
         method: 'GET',
-        path: '/v1/namespaces/analytics/tables/events',
+        path: 'v1/namespaces/analytics/tables/events',
         headers: {},
       })
     })
@@ -544,7 +544,7 @@ describe('TableOperations', () => {
       const error = new IcebergError('Server Error', { status: 500 })
       vi.mocked(mockClient.request).mockRejectedValue(error)
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
 
       await expect(
         ops.createTableIfNotExists(
@@ -571,7 +571,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient, '/v1', 'vended-credentials')
+      const ops = new TableOperations(mockClient, undefined, 'vended-credentials')
       await ops.createTable(
         { namespace: ['analytics'] },
         {
@@ -586,7 +586,7 @@ describe('TableOperations', () => {
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces/analytics/tables',
+        path: 'v1/namespaces/analytics/tables',
         body: expect.any(Object),
         headers: {
           'X-Iceberg-Access-Delegation': 'vended-credentials',
@@ -602,12 +602,12 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient, '/v1', 'vended-credentials,remote-signing')
+      const ops = new TableOperations(mockClient, undefined, 'vended-credentials,remote-signing')
       await ops.loadTable({ namespace: ['analytics'], name: 'events' })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics/tables/events',
+        path: 'v1/namespaces/analytics/tables/events',
         headers: {
           'X-Iceberg-Access-Delegation': 'vended-credentials,remote-signing',
         },
@@ -622,7 +622,7 @@ describe('TableOperations', () => {
         data: { metadata: mockTableMetadata },
       })
 
-      const ops = new TableOperations(mockClient, '/v1')
+      const ops = new TableOperations(mockClient, undefined)
       await ops.createTable(
         { namespace: ['analytics'] },
         {
@@ -637,7 +637,7 @@ describe('TableOperations', () => {
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces/analytics/tables',
+        path: 'v1/namespaces/analytics/tables',
         body: expect.any(Object),
         headers: {},
       })

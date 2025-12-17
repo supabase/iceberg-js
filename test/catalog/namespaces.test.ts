@@ -19,7 +19,7 @@ describe('NamespaceOperations', () => {
         },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       const result = await ops.listNamespaces()
 
       expect(result).toEqual([
@@ -29,7 +29,7 @@ describe('NamespaceOperations', () => {
       ])
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces',
+        path: 'v1/namespaces',
         query: undefined,
       })
     })
@@ -47,7 +47,7 @@ describe('NamespaceOperations', () => {
         },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       const result = await ops.listNamespaces({ namespace: ['analytics'] })
 
       expect(result).toEqual([
@@ -56,7 +56,7 @@ describe('NamespaceOperations', () => {
       ])
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces',
+        path: 'v1/namespaces',
         query: { parent: 'analytics' },
       })
     })
@@ -71,12 +71,12 @@ describe('NamespaceOperations', () => {
         },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       await ops.listNamespaces({ namespace: ['a', 'b'] })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces',
+        path: 'v1/namespaces',
         query: { parent: 'a\x1Fb' },
       })
     })
@@ -89,12 +89,12 @@ describe('NamespaceOperations', () => {
         data: { namespaces: [] },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1/catalog1')
+      const ops = new NamespaceOperations(mockClient, 'catalog1')
       await ops.listNamespaces()
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/catalog1/namespaces',
+        path: 'v1/catalog1/namespaces',
         query: undefined,
       })
     })
@@ -111,13 +111,13 @@ describe('NamespaceOperations', () => {
         },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       const result = await ops.createNamespace({ namespace: ['analytics'] })
 
       expect(result).toEqual({ namespace: ['analytics'] })
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces',
+        path: 'v1/namespaces',
         body: {
           namespace: ['analytics'],
           properties: undefined,
@@ -136,7 +136,7 @@ describe('NamespaceOperations', () => {
         },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       const result = await ops.createNamespace(
         { namespace: ['analytics'] },
         { properties: { owner: 'team' } }
@@ -148,7 +148,7 @@ describe('NamespaceOperations', () => {
       })
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces',
+        path: 'v1/namespaces',
         body: {
           namespace: ['analytics'],
           properties: { owner: 'team' },
@@ -164,12 +164,12 @@ describe('NamespaceOperations', () => {
         data: { namespace: ['analytics', 'prod'] },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       await ops.createNamespace({ namespace: ['analytics', 'prod'] })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces',
+        path: 'v1/namespaces',
         body: {
           namespace: ['analytics', 'prod'],
           properties: undefined,
@@ -187,12 +187,12 @@ describe('NamespaceOperations', () => {
         data: undefined,
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       await ops.dropNamespace({ namespace: ['analytics'] })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
-        path: '/v1/namespaces/analytics',
+        path: 'v1/namespaces/analytics',
       })
     })
 
@@ -204,12 +204,12 @@ describe('NamespaceOperations', () => {
         data: undefined,
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       await ops.dropNamespace({ namespace: ['analytics', 'prod'] })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'DELETE',
-        path: '/v1/namespaces/analytics\x1Fprod',
+        path: 'v1/namespaces/analytics\x1Fprod',
       })
     })
   })
@@ -229,7 +229,7 @@ describe('NamespaceOperations', () => {
         },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       const result = await ops.loadNamespaceMetadata({ namespace: ['analytics'] })
 
       expect(result).toEqual({
@@ -240,7 +240,7 @@ describe('NamespaceOperations', () => {
       })
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics',
+        path: 'v1/namespaces/analytics',
       })
     })
 
@@ -255,12 +255,12 @@ describe('NamespaceOperations', () => {
         },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       await ops.loadNamespaceMetadata({ namespace: ['analytics', 'prod'] })
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics\x1Fprod',
+        path: 'v1/namespaces/analytics\x1Fprod',
       })
     })
   })
@@ -274,13 +274,13 @@ describe('NamespaceOperations', () => {
         data: undefined,
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       const result = await ops.namespaceExists({ namespace: ['analytics'] })
 
       expect(result).toBe(true)
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'HEAD',
-        path: '/v1/namespaces/analytics',
+        path: 'v1/namespaces/analytics',
       })
     })
 
@@ -290,7 +290,7 @@ describe('NamespaceOperations', () => {
         new IcebergError('Not Found', { status: 404 })
       )
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       const result = await ops.namespaceExists({ namespace: ['analytics'] })
 
       expect(result).toBe(false)
@@ -301,7 +301,7 @@ describe('NamespaceOperations', () => {
       const error = new IcebergError('Server Error', { status: 500 })
       vi.mocked(mockClient.request).mockRejectedValue(error)
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
 
       await expect(ops.namespaceExists({ namespace: ['analytics'] })).rejects.toThrow(error)
     })
@@ -319,7 +319,7 @@ describe('NamespaceOperations', () => {
         },
       })
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       await ops.createNamespaceIfNotExists(
         { namespace: ['analytics'] },
         { properties: { owner: 'data-team' } }
@@ -328,7 +328,7 @@ describe('NamespaceOperations', () => {
       expect(mockClient.request).toHaveBeenCalledTimes(1)
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'POST',
-        path: '/v1/namespaces',
+        path: 'v1/namespaces',
         body: {
           namespace: ['analytics'],
           properties: { owner: 'data-team' },
@@ -342,7 +342,7 @@ describe('NamespaceOperations', () => {
         new IcebergError('Namespace already exists', { status: 409 })
       )
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
       await ops.createNamespaceIfNotExists(
         { namespace: ['analytics'] },
         { properties: { owner: 'data-team' } }
@@ -356,7 +356,7 @@ describe('NamespaceOperations', () => {
       const error = new IcebergError('Server Error', { status: 500 })
       vi.mocked(mockClient.request).mockRejectedValue(error)
 
-      const ops = new NamespaceOperations(mockClient, '/v1')
+      const ops = new NamespaceOperations(mockClient, undefined)
 
       await expect(ops.createNamespaceIfNotExists({ namespace: ['analytics'] })).rejects.toThrow(
         error

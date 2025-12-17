@@ -9,6 +9,10 @@ import type {
   NamespaceMetadata,
 } from './types'
 
+function constructPath(...parts: string[]): string {
+  return parts.filter((p) => p).join('/')
+}
+
 function namespaceToPath(namespace: string[]): string {
   return namespace.join('\x1F')
 }
@@ -24,7 +28,7 @@ export class NamespaceOperations {
 
     const response = await this.client.request<ListNamespacesResponse>({
       method: 'GET',
-      path: `${this.prefix}/namespaces`,
+      path: constructPath('v1', this.prefix, 'namespaces'),
       query,
     })
 
@@ -42,7 +46,7 @@ export class NamespaceOperations {
 
     const response = await this.client.request<CreateNamespaceResponse>({
       method: 'POST',
-      path: `${this.prefix}/namespaces`,
+      path: constructPath('v1', this.prefix, 'namespaces'),
       body: request,
     })
 
@@ -52,14 +56,14 @@ export class NamespaceOperations {
   async dropNamespace(id: NamespaceIdentifier): Promise<void> {
     await this.client.request<void>({
       method: 'DELETE',
-      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}`,
+      path: constructPath('v1', this.prefix, 'namespaces', namespaceToPath(id.namespace)),
     })
   }
 
   async loadNamespaceMetadata(id: NamespaceIdentifier): Promise<NamespaceMetadata> {
     const response = await this.client.request<GetNamespaceResponse>({
       method: 'GET',
-      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}`,
+      path: constructPath('v1', this.prefix, 'namespaces', namespaceToPath(id.namespace)),
     })
 
     return {
@@ -71,7 +75,7 @@ export class NamespaceOperations {
     try {
       await this.client.request<void>({
         method: 'HEAD',
-        path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}`,
+        path: constructPath('v1', this.prefix, 'namespaces', namespaceToPath(id.namespace)),
       })
       return true
     } catch (error) {

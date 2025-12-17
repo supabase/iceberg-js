@@ -111,6 +111,7 @@ Creates a new catalog client instance.
 - `baseUrl` (string, required): Base URL of the REST catalog
 - `auth` (AuthConfig, optional): Authentication configuration
 - `catalogName` (string, optional): Catalog name for multi-catalog servers. When specified, requests are sent to `{baseUrl}/v1/{catalogName}/...`. For example, with `baseUrl: 'https://host.com'` and `catalogName: 'prod'`, requests go to `https://host.com/v1/prod/namespaces`
+- `warehouse` (string, optional): warehouse location or identifier to request
 - `fetch` (typeof fetch, optional): Custom fetch implementation
 - `accessDelegation` (AccessDelegation[], optional): Access delegation mechanisms to request from the server
 
