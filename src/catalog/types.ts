@@ -193,8 +193,8 @@ export interface TableSchema {
 }
 
 export interface PartitionField {
-  source_id: number
-  field_id: number
+  'source-id': number
+  'field-id': number
   name: string
   transform: string
 }
@@ -205,10 +205,10 @@ export interface PartitionSpec {
 }
 
 export interface SortField {
-  source_id: number
+  'source-id': number
   transform: string
   direction: 'asc' | 'desc'
-  null_order: 'nulls-first' | 'nulls-last'
+  'null-order': 'nulls-first' | 'nulls-last'
 }
 
 export interface SortOrder {
