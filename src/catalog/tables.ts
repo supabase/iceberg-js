@@ -12,6 +12,10 @@ import type {
   DropTableRequest,
 } from './types'
 
+function constructPath(...parts: string[]): string {
+  return parts.filter((p) => p).join('/')
+}
+
 function namespaceToPath(namespace: string[]): string {
   return namespace.join('\x1F')
 }
@@ -26,7 +30,7 @@ export class TableOperations {
   async listTables(namespace: NamespaceIdentifier): Promise<TableIdentifier[]> {
     const response = await this.client.request<ListTablesResponse>({
       method: 'GET',
-      path: `${this.prefix}/namespaces/${namespaceToPath(namespace.namespace)}/tables`,
+      path: constructPath('v1', this.prefix, 'namespaces', namespaceToPath(namespace.namespace), 'tables'),
     })
 
     return response.data.identifiers
@@ -43,7 +47,7 @@ export class TableOperations {
 
     const response = await this.client.request<LoadTableResponse>({
       method: 'POST',
-      path: `${this.prefix}/namespaces/${namespaceToPath(namespace.namespace)}/tables`,
+      path: constructPath('v1', this.prefix, 'namespaces', namespaceToPath(namespace.namespace), 'tables'),
       body: request,
       headers,
     })
@@ -57,7 +61,7 @@ export class TableOperations {
   ): Promise<CommitTableResponse> {
     const response = await this.client.request<LoadTableResponse>({
       method: 'POST',
-      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      path: constructPath('v1', this.prefix, 'namespaces', namespaceToPath(id.namespace), 'tables', id.name),
       body: request,
     })
 
@@ -70,7 +74,7 @@ export class TableOperations {
   async dropTable(id: TableIdentifier, options?: DropTableRequest): Promise<void> {
     await this.client.request<void>({
       method: 'DELETE',
-      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      path: constructPath('v1', this.prefix, 'namespaces', namespaceToPath(id.namespace), 'tables', id.name),
       query: { purgeRequested: String(options?.purge ?? false) },
     })
   }
@@ -83,7 +87,7 @@ export class TableOperations {
 
     const response = await this.client.request<LoadTableResponse>({
       method: 'GET',
-      path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      path: constructPath('v1', this.prefix, 'namespaces', namespaceToPath(id.namespace), 'tables', id.name),
       headers,
     })
 
@@ -99,7 +103,7 @@ export class TableOperations {
     try {
       await this.client.request<void>({
         method: 'HEAD',
-        path: `${this.prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+        path: constructPath('v1', this.prefix, 'namespaces', namespaceToPath(id.namespace), 'tables', id.name),
         headers,
       })
       return true

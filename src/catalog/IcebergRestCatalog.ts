@@ -3,6 +3,7 @@ import type { AuthConfig, HttpClient } from '../http/types'
 import { NamespaceOperations } from './namespaces'
 import { TableOperations } from './tables'
 import type {
+  CatalogConfig,
   CreateTableRequest,
   CreateNamespaceResponse,
   CommitTableResponse,
@@ -30,6 +31,8 @@ export interface IcebergRestCatalogOptions {
   baseUrl: string
   /** Optional catalog name prefix for multi-catalog servers */
   catalogName?: string
+  /** Optional warehouse location or identifier to request */
+  warehouse?: string
   /** Authentication configuration */
   auth?: AuthConfig
   /** Custom fetch implementation (defaults to globalThis.fetch) */
@@ -73,9 +76,14 @@ export interface IcebergRestCatalogOptions {
  */
 export class IcebergRestCatalog {
   private readonly client: HttpClient
-  private readonly namespaceOps: NamespaceOperations
-  private readonly tableOps: TableOperations
   private readonly accessDelegation?: string
+
+  // https://iceberg.apache.org/docs/latest/configuration/#catalog-properties
+  private catalogProperties: Record<string, string>
+  private configFetched: boolean = false
+
+  private namespaceOps: NamespaceOperations
+  private tableOps: TableOperations
 
   /**
    * Creates a new Iceberg REST Catalog client.
@@ -83,24 +91,55 @@ export class IcebergRestCatalog {
    * @param options - Configuration options for the catalog client
    */
   constructor(options: IcebergRestCatalogOptions) {
-    let prefix = 'v1'
-    if (options.catalogName) {
-      prefix += `/${options.catalogName}`
-    }
-
     const baseUrl = options.baseUrl.endsWith('/') ? options.baseUrl : `${options.baseUrl}/`
-
     this.client = createFetchClient({
       baseUrl,
       auth: options.auth,
       fetchImpl: options.fetch,
     })
 
+    this.catalogProperties = {
+      ...(options.catalogName ? { prefix: options.catalogName } : {}),
+      ...(options.warehouse ? { warehouse: options.warehouse } : {}),
+    }
+
     // Format accessDelegation as comma-separated string per spec
     this.accessDelegation = options.accessDelegation?.join(',')
 
-    this.namespaceOps = new NamespaceOperations(this.client, prefix)
-    this.tableOps = new TableOperations(this.client, prefix, this.accessDelegation)
+    this.namespaceOps = new NamespaceOperations(this.client, options.catalogName)
+    this.tableOps = new TableOperations(this.client, options.catalogName, this.accessDelegation)
+  }
+
+  /**
+   * Ensures the client is configured before operations.
+   * This is called automatically before each operation (lazy initialization).
+   */
+  private async ensureInitialized(): Promise<void> {
+    await this.fetchConfig()
+  }
+
+  /**
+   * Call Configuration API to get catalog configuration properties from the server.
+   */
+  private async fetchConfig(): Promise<void> {
+    if (this.configFetched) {
+      return
+    }
+
+    const response = await this.client.request<CatalogConfig>({
+      method: 'GET',
+      path: `v1/config`,
+      query: { warehouse: this.catalogProperties['warehouse'] },
+    })
+    const config = response.data
+
+    this.catalogProperties = { ...config.defaults, ...this.catalogProperties, ...config.overrides }
+
+    // Re-initialize operations with the final catalog properties
+    this.namespaceOps = new NamespaceOperations(this.client, this.catalogProperties['prefix'])
+    this.tableOps = new TableOperations(this.client, this.catalogProperties['prefix'], this.accessDelegation)
+
+    this.configFetched = true
   }
 
   /**
@@ -119,6 +158,7 @@ export class IcebergRestCatalog {
    * ```
    */
   async listNamespaces(parent?: NamespaceIdentifier): Promise<NamespaceIdentifier[]> {
+    await this.ensureInitialized()
     return this.namespaceOps.listNamespaces(parent)
   }
 
@@ -143,6 +183,7 @@ export class IcebergRestCatalog {
     id: NamespaceIdentifier,
     metadata?: NamespaceMetadata
   ): Promise<CreateNamespaceResponse> {
+    await this.ensureInitialized()
     return this.namespaceOps.createNamespace(id, metadata)
   }
 
@@ -159,6 +200,7 @@ export class IcebergRestCatalog {
    * ```
    */
   async dropNamespace(id: NamespaceIdentifier): Promise<void> {
+    await this.ensureInitialized()
     await this.namespaceOps.dropNamespace(id)
   }
 
@@ -175,6 +217,7 @@ export class IcebergRestCatalog {
    * ```
    */
   async loadNamespaceMetadata(id: NamespaceIdentifier): Promise<NamespaceMetadata> {
+    await this.ensureInitialized()
     return this.namespaceOps.loadNamespaceMetadata(id)
   }
 
@@ -191,6 +234,7 @@ export class IcebergRestCatalog {
    * ```
    */
   async listTables(namespace: NamespaceIdentifier): Promise<TableIdentifier[]> {
+    await this.ensureInitialized()
     return this.tableOps.listTables(namespace)
   }
 
@@ -229,6 +273,7 @@ export class IcebergRestCatalog {
     namespace: NamespaceIdentifier,
     request: CreateTableRequest
   ): Promise<TableMetadata> {
+    await this.ensureInitialized()
     return this.tableOps.createTable(namespace, request)
   }
 
@@ -257,6 +302,7 @@ export class IcebergRestCatalog {
     id: TableIdentifier,
     request: UpdateTableRequest
   ): Promise<CommitTableResponse> {
+    await this.ensureInitialized()
     return this.tableOps.updateTable(id, request)
   }
 
@@ -271,6 +317,7 @@ export class IcebergRestCatalog {
    * ```
    */
   async dropTable(id: TableIdentifier, options?: DropTableRequest): Promise<void> {
+    await this.ensureInitialized()
     await this.tableOps.dropTable(id, options)
   }
 
@@ -288,6 +335,7 @@ export class IcebergRestCatalog {
    * ```
    */
   async loadTable(id: TableIdentifier): Promise<TableMetadata> {
+    await this.ensureInitialized()
     return this.tableOps.loadTable(id)
   }
 
@@ -304,6 +352,7 @@ export class IcebergRestCatalog {
    * ```
    */
   async namespaceExists(id: NamespaceIdentifier): Promise<boolean> {
+    await this.ensureInitialized()
     return this.namespaceOps.namespaceExists(id)
   }
 
@@ -320,6 +369,7 @@ export class IcebergRestCatalog {
    * ```
    */
   async tableExists(id: TableIdentifier): Promise<boolean> {
+    await this.ensureInitialized()
     return this.tableOps.tableExists(id)
   }
 
@@ -349,6 +399,7 @@ export class IcebergRestCatalog {
     id: NamespaceIdentifier,
     metadata?: NamespaceMetadata
   ): Promise<CreateNamespaceResponse | void> {
+    await this.ensureInitialized()
     return this.namespaceOps.createNamespaceIfNotExists(id, metadata)
   }
 
@@ -383,6 +434,7 @@ export class IcebergRestCatalog {
     namespace: NamespaceIdentifier,
     request: CreateTableRequest
   ): Promise<TableMetadata> {
+    await this.ensureInitialized()
     return this.tableOps.createTableIfNotExists(namespace, request)
   }
 }
