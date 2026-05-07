@@ -39,7 +39,7 @@ These boundaries keep the library focused and maintainable. For data operations,
 - **Minimal**: Thin HTTP wrapper over the official REST API, no engine-specific logic
 - **Type-safe**: First-class TypeScript support with strongly-typed request/response models
 - **Fetch-based**: Uses native `fetch` API with support for custom implementations
-- **Universal**: Targets Node 20+ and modern browsers (ES2020)
+- **Universal**: Targets Node 22+ and modern browsers (ES2020)
 - **Catalog-only**: Focused on catalog operations (no data reading/Parquet support in v0.1.0)
 
 ## Documentation
@@ -335,7 +335,7 @@ This package is built to work in **all** Node.js and JavaScript environments:
 - CommonJS: `dist/index.cjs` with `dist/index.d.cts`
 - Proper `exports` field for Node.js 12+ module resolution
 
-All scenarios are tested in CI on Node.js 20 and 22.
+All scenarios are tested in CI on Node.js 22.
 
 ## Browser Usage
 
@@ -354,7 +354,7 @@ const namespaces = await catalog.listNamespaces()
 
 ## Node.js Usage
 
-Node.js 20+ includes native `fetch` support. For older versions, provide a custom fetch implementation:
+Node.js 22+ includes native `fetch` support. For older versions, provide a custom fetch implementation:
 
 ```typescript
 import { IcebergRestCatalog } from 'iceberg-js'
