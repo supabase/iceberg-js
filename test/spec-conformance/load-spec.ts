@@ -1,11 +1,9 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
 import yaml from 'js-yaml'
 import $RefParser from '@apidevtools/json-schema-ref-parser'
 import Ajv, { type ValidateFunction } from 'ajv'
 import addFormats from 'ajv-formats'
-
-const SPEC_PATH = resolve(__dirname, '../../tmp/rest-catalog-open-api.yaml')
+import { ICEBERG_REST_SPEC_URL } from '../../src/spec-version'
 
 let cached: SpecBundle | undefined
 
@@ -37,7 +35,7 @@ export interface SpecBundle {
 export async function loadSpec(): Promise<SpecBundle> {
   if (cached) return cached
 
-  const raw = readFileSync(SPEC_PATH, 'utf-8')
+  const raw = await loadSpecYaml()
   const parsed = yaml.load(raw) as OpenAPIDoc
   // `bundle` resolves external refs but preserves *internal* $refs, which Ajv
   // handles natively via `addSchema`. Using `dereference` here would inline
@@ -108,6 +106,35 @@ export async function loadSpec(): Promise<SpecBundle> {
 }
 
 const HTTP_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'])
+
+/**
+ * Mirrors `scripts/spec-source.mjs`. Prefers ICEBERG_SPEC_PATH for offline dev,
+ * otherwise fetches from ICEBERG_SPEC_URL (or the pinned upstream tag).
+ * Memoized at module scope so a `pnpm test` run hits the network at most once.
+ */
+let cachedYaml: string | undefined
+async function loadSpecYaml(): Promise<string> {
+  if (cachedYaml) return cachedYaml
+
+  const envPath = process.env.ICEBERG_SPEC_PATH
+  if (envPath) {
+    if (!existsSync(envPath)) {
+      throw new Error(`ICEBERG_SPEC_PATH points to a missing file: ${envPath}`)
+    }
+    cachedYaml = readFileSync(envPath, 'utf-8')
+    return cachedYaml
+  }
+
+  const url = process.env.ICEBERG_SPEC_URL || ICEBERG_REST_SPEC_URL
+  // eslint-disable-next-line no-console
+  console.error(`[load-spec] fetching ${url}`)
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch Iceberg spec from ${url}: ${res.status} ${res.statusText}`)
+  }
+  cachedYaml = await res.text()
+  return cachedYaml
+}
 
 /**
  * Recursively remove keywords Ajv can't process (`discriminator`, `example`,

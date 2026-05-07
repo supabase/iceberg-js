@@ -9,6 +9,8 @@
 
 A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceberg REST Catalog**.
 
+Tracks the OpenAPI spec at `apache-iceberg-1.10.0`. The exact tag is exported as `ICEBERG_REST_SPEC_TAG` and is the source of truth for the conformance tests in CI — see [`spec-pin.json`](./spec-pin.json).
+
 ## Motivation
 
 This library provides JavaScript and TypeScript developers with a straightforward way to interact with Apache Iceberg REST Catalogs. It's designed as a thin HTTP wrapper that mirrors the official REST API, making it easy to manage namespaces and tables from any JS/TS environment.

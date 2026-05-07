@@ -112,3 +112,5 @@ export { IcebergError } from './errors/IcebergError'
 export type { IcebergErrorResponse } from './errors/IcebergError'
 
 export { generateIdempotencyKey } from './utils/idempotency-key'
+
+export { ICEBERG_REST_SPEC_TAG, ICEBERG_REST_SPEC_URL } from './spec-version'
