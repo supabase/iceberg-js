@@ -25,7 +25,7 @@ Thank you for your interest in contributing to `iceberg-js`! This document provi
 
 ### Prerequisites
 
-- **Node.js**: 20.x or higher
+- **Node.js**: 22.x or higher
 - **pnpm**
 
 ### Installation

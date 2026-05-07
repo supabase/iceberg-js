@@ -60,7 +60,7 @@
     "@eslint/js": "^9.39.1",
     "@eslint/json": "^0.14.0",
     "@eslint/markdown": "^7.5.1",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "jiti": "^2.6.1",
@@ -72,6 +72,7 @@
     "vitest": "^4.0.12"
   },
   "engines": {
-    "node": ">=20.0.0"
-  }
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@11.0.8+sha512.4c4097e1dd2d42372c4e7fa5a791ff28fc75a484c7ac192e64b1df0fdef17594ba982f9b4fed9adfb3c757846f565b799b2763fb3733d1de1bcb82cf46684912"
 }
