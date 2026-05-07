@@ -9,6 +9,8 @@
 
 A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceberg REST Catalog**.
 
+Tracks the OpenAPI spec at `apache-iceberg-1.10.0`. The exact tag is exported as `ICEBERG_REST_SPEC_TAG` and is the source of truth for the conformance tests in CI — see [`spec-pin.json`](./spec-pin.json).
+
 ## Motivation
 
 This library provides JavaScript and TypeScript developers with a straightforward way to interact with Apache Iceberg REST Catalogs. It's designed as a thin HTTP wrapper that mirrors the official REST API, making it easy to manage namespaces and tables from any JS/TS environment.
@@ -52,13 +54,34 @@ These boundaries keep the library focused and maintainable. For data operations,
 npm install iceberg-js
 ```
 
+## Migrating from 0.x to 1.0
+
+The 1.0 release aligns the client with the [Apache Iceberg REST Catalog OpenAPI spec](https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml). The breaking changes are limited to the listing methods and the `updateTable` body shape.
+
+| Before (0.x)                                                                 | After (1.0)                                                                                                                                                                  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `await catalog.listNamespaces()` returns `NamespaceIdentifier[]`             | returns `{ namespaces: NamespaceIdentifier[]; nextPageToken? }`                                                                                                              |
+| `await catalog.listNamespaces({ namespace: ['x'] })` (parent)                | `await catalog.listNamespaces({ parent: { namespace: ['x'] } })`                                                                                                             |
+| `await catalog.listTables({ namespace: ['x'] })` returns `TableIdentifier[]` | returns `{ identifiers: TableIdentifier[]; nextPageToken? }`                                                                                                                 |
+| `updateTable({ properties: { … } })`                                         | `updateTable({ updates: [{ action: 'set-properties', updates: { … } }] })`                                                                                                   |
+| `catalogName` builds the path manually as `/v1/<name>/...`                   | `warehouse` (or `catalogName` as alias) goes through `GET /v1/config` and uses the server-returned `prefix`. Closes [#32](https://github.com/supabase/iceberg-js/issues/32). |
+
+Non-breaking additions:
+
+- `Idempotency-Key` is automatically emitted on every POST/DELETE mutation.
+- `loadTable(id, { ifNoneMatch })` enables conditional GETs (returns `null` on 304).
+- `loadTableResult(id, options?)` returns the full spec-shaped `LoadTableResult` plus the response `ETag`.
+- `updateNamespaceProperties` is now exposed.
+- The full `TableUpdate` and `TableRequirement` discriminated unions are exported.
+
 ## Quick Start
 
 ```typescript
 import { IcebergRestCatalog } from 'iceberg-js'
 
 const catalog = new IcebergRestCatalog({
-  baseUrl: 'https://my-catalog.example.com/iceberg/v1',
+  baseUrl: 'https://my-catalog.example.com',
+  warehouse: 'my-warehouse', // optional; resolved via GET /v1/config
   auth: {
     type: 'bearer',
     token: process.env.ICEBERG_TOKEN,
@@ -67,6 +90,9 @@ const catalog = new IcebergRestCatalog({
 
 // Create a namespace
 await catalog.createNamespace({ namespace: ['analytics'] })
+
+// List namespaces (paginated)
+const { namespaces, nextPageToken } = await catalog.listNamespaces({ pageSize: 50 })
 
 // Create a table
 await catalog.createTable(
@@ -109,8 +135,9 @@ Creates a new catalog client instance.
 **Options:**
 
 - `baseUrl` (string, required): Base URL of the REST catalog
+- `warehouse` (string, optional): Warehouse identifier. On first use, the client calls `GET /v1/config?warehouse=…` and uses the server-returned `overrides.prefix` for all subsequent requests. This is the spec-recommended pattern (see [Apache Iceberg REST spec](https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml)) and is the way to address per-warehouse catalogs such as Cloudflare R2 or Tabular.
+- `catalogName` (string, optional): Permanent alias for `warehouse`, kept for backward compatibility. If both are provided, `warehouse` wins.
 - `auth` (AuthConfig, optional): Authentication configuration
-- `catalogName` (string, optional): Catalog name for multi-catalog servers. When specified, requests are sent to `{baseUrl}/v1/{catalogName}/...`. For example, with `baseUrl: 'https://host.com'` and `catalogName: 'prod'`, requests go to `https://host.com/v1/prod/namespaces`
 - `fetch` (typeof fetch, optional): Custom fetch implementation
 - `accessDelegation` (AccessDelegation[], optional): Access delegation mechanisms to request from the server
 
@@ -156,16 +183,24 @@ Supported delegation mechanisms:
 
 ### Namespace Operations
 
-#### `listNamespaces(parent?: NamespaceIdentifier): Promise<NamespaceIdentifier[]>`
+#### `listNamespaces(options?): Promise<{ namespaces, nextPageToken? }>`
 
-List all namespaces, optionally under a parent namespace.
+List namespaces, optionally under a parent namespace, with cursor-based pagination.
 
 ```typescript
-const namespaces = await catalog.listNamespaces()
-// [{ namespace: ['default'] }, { namespace: ['analytics'] }]
+const { namespaces } = await catalog.listNamespaces()
+// namespaces: [{ namespace: ['default'] }, { namespace: ['analytics'] }]
 
-const children = await catalog.listNamespaces({ namespace: ['analytics'] })
-// [{ namespace: ['analytics', 'prod'] }]
+const { namespaces: children } = await catalog.listNamespaces({
+  parent: { namespace: ['analytics'] },
+})
+
+// Pagination
+const page1 = await catalog.listNamespaces({ pageSize: 100 })
+const page2 = await catalog.listNamespaces({
+  pageSize: 100,
+  pageToken: page1.nextPageToken,
+})
 ```
 
 #### `createNamespace(id: NamespaceIdentifier, metadata?: NamespaceMetadata): Promise<void>`
@@ -193,15 +228,32 @@ const metadata = await catalog.loadNamespaceMetadata({ namespace: ['analytics'] 
 // { properties: { owner: 'data-team', ... } }
 ```
 
-### Table Operations
+#### `updateNamespaceProperties(id, request): Promise<UpdateNamespacePropertiesResponse>`
 
-#### `listTables(namespace: NamespaceIdentifier): Promise<TableIdentifier[]>`
-
-List all tables in a namespace.
+Set or remove namespace properties.
 
 ```typescript
-const tables = await catalog.listTables({ namespace: ['analytics'] })
-// [{ namespace: ['analytics'], name: 'events' }]
+await catalog.updateNamespaceProperties(
+  { namespace: ['analytics'] },
+  { updates: { owner: 'data-team' }, removals: ['stale_property'] }
+)
+```
+
+### Table Operations
+
+#### `listTables(namespace, options?): Promise<{ identifiers, nextPageToken? }>`
+
+List tables in a namespace, with cursor-based pagination.
+
+```typescript
+const { identifiers } = await catalog.listTables({ namespace: ['analytics'] })
+// identifiers: [{ namespace: ['analytics'], name: 'events' }]
+
+const page1 = await catalog.listTables({ namespace: ['analytics'] }, { pageSize: 100 })
+const page2 = await catalog.listTables(
+  { namespace: ['analytics'] },
+  { pageSize: 100, pageToken: page1.nextPageToken }
+)
 ```
 
 #### `createTable(namespace: NamespaceIdentifier, request: CreateTableRequest): Promise<TableMetadata>`
@@ -236,26 +288,40 @@ const metadata = await catalog.createTable(
 )
 ```
 
-#### `loadTable(id: TableIdentifier): Promise<TableMetadata>`
+#### `loadTable(id, options?): Promise<TableMetadata | null>`
 
-Load table metadata.
+Load table metadata. Pass `ifNoneMatch` (a previous ETag) for conditional GET — returns `null` on 304.
 
 ```typescript
 const metadata = await catalog.loadTable({
   namespace: ['analytics'],
   name: 'events',
 })
+
+// Conditional load
+const updated = await catalog.loadTable(
+  { namespace: ['analytics'], name: 'events' },
+  { ifNoneMatch: lastSeenEtag }
+)
+if (updated === null) {
+  // table is unchanged since lastSeenEtag
+}
 ```
 
-#### `updateTable(id: TableIdentifier, request: UpdateTableRequest): Promise<CommitTableResponse>`
+#### `loadTableResult(id, options?): Promise<LoadTableResult & { etag } | null>`
 
-Update table metadata (schema, partition spec, or properties).
+Spec-aligned `LoadTableResult` wrapper exposing `metadata`, `metadata-location`, server `config`, `storage-credentials`, plus the captured `ETag` so you can pass it to a future `loadTable` call.
+
+#### `updateTable(id, request): Promise<CommitTableResponse>` / `commitTable(id, request)`
+
+Commit updates to a table using the spec-aligned `{ requirements?, updates }` shape.
 
 ```typescript
 const updated = await catalog.updateTable(
   { namespace: ['analytics'], name: 'events' },
   {
-    properties: { 'read.split.target-size': '134217728' },
+    requirements: [{ type: 'assert-current-schema-id', 'current-schema-id': 0 }],
+    updates: [{ action: 'set-properties', updates: { 'read.split.target-size': '134217728' } }],
   }
 )
 ```
@@ -292,15 +358,43 @@ The library exports all relevant types:
 
 ```typescript
 import type {
+  // Identifiers
   NamespaceIdentifier,
   TableIdentifier,
+
+  // Schema / type system
   TableSchema,
   TableField,
   IcebergType,
   PartitionSpec,
   SortOrder,
+
+  // Requests / responses
   CreateTableRequest,
+  CommitTableRequest,
+  CommitTableResponse,
+  LoadTableResult,
+  LoadTableResultWithEtag,
   TableMetadata,
+  UpdateNamespacePropertiesRequest,
+  UpdateNamespacePropertiesResponse,
+
+  // Method options
+  ListNamespacesOptions,
+  ListNamespacesResult,
+  ListTablesOptions,
+  ListTablesResult,
+  LoadTableOptions,
+
+  // Catalog config
+  CatalogConfig,
+  StorageCredential,
+
+  // Table update / requirement unions (full spec coverage)
+  TableUpdate,
+  TableRequirement,
+
+  // Auth / delegation
   AuthConfig,
   AccessDelegation,
 } from 'iceberg-js'

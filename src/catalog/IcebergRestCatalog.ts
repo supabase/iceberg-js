@@ -3,15 +3,25 @@ import type { AuthConfig, HttpClient } from '../http/types'
 import { NamespaceOperations } from './namespaces'
 import { TableOperations } from './tables'
 import type {
-  CreateTableRequest,
-  CreateNamespaceResponse,
+  CatalogConfig,
+  CommitTableRequest,
   CommitTableResponse,
+  CreateNamespaceResponse,
+  CreateTableRequest,
+  DropTableRequest,
+  ListNamespacesOptions,
+  ListNamespacesResult,
+  ListTablesOptions,
+  ListTablesResult,
+  LoadTableOptions,
+  LoadTableResultWithEtag,
   NamespaceIdentifier,
   NamespaceMetadata,
   TableIdentifier,
   TableMetadata,
+  UpdateNamespacePropertiesRequest,
+  UpdateNamespacePropertiesResponse,
   UpdateTableRequest,
-  DropTableRequest,
 } from './types'
 
 /**
@@ -28,7 +38,17 @@ export type AccessDelegation = 'vended-credentials' | 'remote-signing'
 export interface IcebergRestCatalogOptions {
   /** Base URL of the Iceberg REST Catalog API */
   baseUrl: string
-  /** Optional catalog name prefix for multi-catalog servers */
+  /**
+   * Warehouse identifier. The client passes this to `GET /v1/config?warehouse=…`
+   * on first use; the server-returned `overrides.prefix` is then used for all
+   * subsequent requests. This is the spec-recommended way to address a warehouse
+   * (e.g., a Cloudflare R2 bucket) and replaces the older `catalogName` flow.
+   */
+  warehouse?: string
+  /**
+   * Alias for {@link warehouse} kept for backward compatibility. If both are
+   * set, `warehouse` wins.
+   */
   catalogName?: string
   /** Authentication configuration */
   auth?: AuthConfig
@@ -54,21 +74,13 @@ export interface IcebergRestCatalogOptions {
  * @example
  * ```typescript
  * const catalog = new IcebergRestCatalog({
- *   baseUrl: 'https://my-catalog.example.com/iceberg/v1',
+ *   baseUrl: 'https://my-catalog.example.com',
+ *   warehouse: 'my-warehouse',
  *   auth: { type: 'bearer', token: process.env.ICEBERG_TOKEN }
  * });
  *
- * // Create a namespace
+ * // First call lazily fetches /v1/config?warehouse=my-warehouse
  * await catalog.createNamespace({ namespace: ['analytics'] });
- *
- * // Create a table
- * await catalog.createTable(
- *   { namespace: ['analytics'] },
- *   {
- *     name: 'events',
- *     schema: { type: 'struct', fields: [...] }
- *   }
- * );
  * ```
  */
 export class IcebergRestCatalog {
@@ -76,6 +88,10 @@ export class IcebergRestCatalog {
   private readonly namespaceOps: NamespaceOperations
   private readonly tableOps: TableOperations
   private readonly accessDelegation?: string
+  private readonly warehouse?: string
+
+  private prefixPromise?: Promise<string>
+  private cachedConfig?: CatalogConfig
 
   /**
    * Creates a new Iceberg REST Catalog client.
@@ -83,12 +99,9 @@ export class IcebergRestCatalog {
    * @param options - Configuration options for the catalog client
    */
   constructor(options: IcebergRestCatalogOptions) {
-    let prefix = 'v1'
-    if (options.catalogName) {
-      prefix += `/${options.catalogName}`
-    }
-
     const baseUrl = options.baseUrl.endsWith('/') ? options.baseUrl : `${options.baseUrl}/`
+
+    this.warehouse = options.warehouse ?? options.catalogName
 
     this.client = createFetchClient({
       baseUrl,
@@ -99,45 +112,78 @@ export class IcebergRestCatalog {
     // Format accessDelegation as comma-separated string per spec
     this.accessDelegation = options.accessDelegation?.join(',')
 
-    this.namespaceOps = new NamespaceOperations(this.client, prefix)
-    this.tableOps = new TableOperations(this.client, prefix, this.accessDelegation)
+    const getPrefix = () => this.resolvePrefix()
+    this.namespaceOps = new NamespaceOperations(this.client, getPrefix)
+    this.tableOps = new TableOperations(this.client, getPrefix, this.accessDelegation)
+  }
+
+  /**
+   * Fetch and cache the server's catalog configuration. Subsequent calls return
+   * the same object. Calling this is optional — operations will trigger it
+   * lazily on first use.
+   */
+  async loadConfig(): Promise<CatalogConfig> {
+    if (this.cachedConfig) return this.cachedConfig
+    const query: Record<string, string | undefined> = {}
+    if (this.warehouse !== undefined) query.warehouse = this.warehouse
+    const response = await this.client.request<CatalogConfig>({
+      method: 'GET',
+      path: 'v1/config',
+      query: Object.keys(query).length ? query : undefined,
+    })
+    this.cachedConfig = response.data
+    return response.data
+  }
+
+  private async resolvePrefix(): Promise<string> {
+    if (!this.prefixPromise) {
+      this.prefixPromise = this.computePrefix()
+    }
+    return this.prefixPromise
+  }
+
+  private async computePrefix(): Promise<string> {
+    if (this.warehouse === undefined) {
+      // No warehouse → no /config call. Use plain `v1` prefix.
+      return 'v1'
+    }
+    try {
+      const config = await this.loadConfig()
+      const serverPrefix = config.overrides?.prefix ?? config.defaults?.prefix
+      return serverPrefix ? `v1/${serverPrefix}` : `v1/${this.warehouse}`
+    } catch {
+      // /config is optional in some deployments; fall back to using the
+      // warehouse as a literal path segment (matches the legacy catalogName
+      // behavior).
+      return `v1/${this.warehouse}`
+    }
   }
 
   /**
    * Lists all namespaces in the catalog.
    *
-   * @param parent - Optional parent namespace to list children under
-   * @returns Array of namespace identifiers
+   * @returns Paginated namespace list with optional `nextPageToken`
    *
    * @example
    * ```typescript
-   * // List all top-level namespaces
-   * const namespaces = await catalog.listNamespaces();
+   * const { namespaces } = await catalog.listNamespaces();
    *
-   * // List namespaces under a parent
-   * const children = await catalog.listNamespaces({ namespace: ['analytics'] });
+   * // List children under a parent
+   * const { namespaces: children } = await catalog.listNamespaces({
+   *   parent: { namespace: ['analytics'] },
+   * });
+   *
+   * // Paginate
+   * const page1 = await catalog.listNamespaces({ pageSize: 100 });
+   * const page2 = await catalog.listNamespaces({ pageSize: 100, pageToken: page1.nextPageToken });
    * ```
    */
-  async listNamespaces(parent?: NamespaceIdentifier): Promise<NamespaceIdentifier[]> {
-    return this.namespaceOps.listNamespaces(parent)
+  async listNamespaces(options: ListNamespacesOptions = {}): Promise<ListNamespacesResult> {
+    return this.namespaceOps.listNamespaces(options)
   }
 
   /**
    * Creates a new namespace in the catalog.
-   *
-   * @param id - Namespace identifier to create
-   * @param metadata - Optional metadata properties for the namespace
-   * @returns Response containing the created namespace and its properties
-   *
-   * @example
-   * ```typescript
-   * const response = await catalog.createNamespace(
-   *   { namespace: ['analytics'] },
-   *   { properties: { owner: 'data-team' } }
-   * );
-   * console.log(response.namespace); // ['analytics']
-   * console.log(response.properties); // { owner: 'data-team', ... }
-   * ```
    */
   async createNamespace(
     id: NamespaceIdentifier,
@@ -150,13 +196,6 @@ export class IcebergRestCatalog {
    * Drops a namespace from the catalog.
    *
    * The namespace must be empty (contain no tables) before it can be dropped.
-   *
-   * @param id - Namespace identifier to drop
-   *
-   * @example
-   * ```typescript
-   * await catalog.dropNamespace({ namespace: ['analytics'] });
-   * ```
    */
   async dropNamespace(id: NamespaceIdentifier): Promise<void> {
     await this.namespaceOps.dropNamespace(id)
@@ -164,66 +203,35 @@ export class IcebergRestCatalog {
 
   /**
    * Loads metadata for a namespace.
-   *
-   * @param id - Namespace identifier to load
-   * @returns Namespace metadata including properties
-   *
-   * @example
-   * ```typescript
-   * const metadata = await catalog.loadNamespaceMetadata({ namespace: ['analytics'] });
-   * console.log(metadata.properties);
-   * ```
    */
   async loadNamespaceMetadata(id: NamespaceIdentifier): Promise<NamespaceMetadata> {
     return this.namespaceOps.loadNamespaceMetadata(id)
   }
 
   /**
-   * Lists all tables in a namespace.
-   *
-   * @param namespace - Namespace identifier to list tables from
-   * @returns Array of table identifiers
-   *
-   * @example
-   * ```typescript
-   * const tables = await catalog.listTables({ namespace: ['analytics'] });
-   * console.log(tables); // [{ namespace: ['analytics'], name: 'events' }, ...]
-   * ```
+   * Set or remove properties on a namespace.
    */
-  async listTables(namespace: NamespaceIdentifier): Promise<TableIdentifier[]> {
-    return this.tableOps.listTables(namespace)
+  async updateNamespaceProperties(
+    id: NamespaceIdentifier,
+    request: UpdateNamespacePropertiesRequest
+  ): Promise<UpdateNamespacePropertiesResponse> {
+    return this.namespaceOps.updateNamespaceProperties(id, request)
+  }
+
+  /**
+   * Lists tables in a namespace.
+   *
+   * @returns Paginated table list with optional `nextPageToken`
+   */
+  async listTables(
+    namespace: NamespaceIdentifier,
+    options: ListTablesOptions = {}
+  ): Promise<ListTablesResult> {
+    return this.tableOps.listTables(namespace, options)
   }
 
   /**
    * Creates a new table in the catalog.
-   *
-   * @param namespace - Namespace to create the table in
-   * @param request - Table creation request including name, schema, partition spec, etc.
-   * @returns Table metadata for the created table
-   *
-   * @example
-   * ```typescript
-   * const metadata = await catalog.createTable(
-   *   { namespace: ['analytics'] },
-   *   {
-   *     name: 'events',
-   *     schema: {
-   *       type: 'struct',
-   *       fields: [
-   *         { id: 1, name: 'id', type: 'long', required: true },
-   *         { id: 2, name: 'timestamp', type: 'timestamp', required: true }
-   *       ],
-   *       'schema-id': 0
-   *     },
-   *     'partition-spec': {
-   *       'spec-id': 0,
-   *       fields: [
-   *         { 'source-id': 2, 'field-id': 1000, name: 'ts_day', transform: 'day' }
-   *       ]
-   *     }
-   *   }
-   * );
-   * ```
    */
   async createTable(
     namespace: NamespaceIdentifier,
@@ -233,24 +241,17 @@ export class IcebergRestCatalog {
   }
 
   /**
-   * Updates an existing table's metadata.
-   *
-   * Can update the schema, partition spec, or properties of a table.
-   *
-   * @param id - Table identifier to update
-   * @param request - Update request with fields to modify
-   * @returns Response containing the metadata location and updated table metadata
+   * Commit updates to a table using the spec-aligned `{ requirements, updates }` shape.
    *
    * @example
    * ```typescript
-   * const response = await catalog.updateTable(
+   * await catalog.updateTable(
    *   { namespace: ['analytics'], name: 'events' },
    *   {
-   *     properties: { 'read.split.target-size': '134217728' }
-   *   }
+   *     requirements: [],
+   *     updates: [{ action: 'set-properties', updates: { 'read.split.target-size': '134217728' } }],
+   *   },
    * );
-   * console.log(response['metadata-location']); // s3://...
-   * console.log(response.metadata); // TableMetadata object
    * ```
    */
   async updateTable(
@@ -260,15 +261,16 @@ export class IcebergRestCatalog {
     return this.tableOps.updateTable(id, request)
   }
 
+  /** Spec-aligned alias for {@link updateTable}. */
+  async commitTable(
+    id: TableIdentifier,
+    request: CommitTableRequest
+  ): Promise<CommitTableResponse> {
+    return this.tableOps.commitTable(id, request)
+  }
+
   /**
    * Drops a table from the catalog.
-   *
-   * @param id - Table identifier to drop
-   *
-   * @example
-   * ```typescript
-   * await catalog.dropTable({ namespace: ['analytics'], name: 'events' });
-   * ```
    */
   async dropTable(id: TableIdentifier, options?: DropTableRequest): Promise<void> {
     await this.tableOps.dropTable(id, options)
@@ -277,31 +279,28 @@ export class IcebergRestCatalog {
   /**
    * Loads metadata for a table.
    *
-   * @param id - Table identifier to load
-   * @returns Table metadata including schema, partition spec, location, etc.
-   *
-   * @example
-   * ```typescript
-   * const metadata = await catalog.loadTable({ namespace: ['analytics'], name: 'events' });
-   * console.log(metadata.schema);
-   * console.log(metadata.location);
-   * ```
+   * Pass `ifNoneMatch` (a previous ETag) to perform a conditional GET. If the
+   * server returns 304 Not Modified, the method returns `null`.
    */
-  async loadTable(id: TableIdentifier): Promise<TableMetadata> {
-    return this.tableOps.loadTable(id)
+  async loadTable(id: TableIdentifier): Promise<TableMetadata>
+  async loadTable(id: TableIdentifier, options: LoadTableOptions): Promise<TableMetadata | null>
+  async loadTable(id: TableIdentifier, options?: LoadTableOptions): Promise<TableMetadata | null> {
+    return options ? this.tableOps.loadTable(id, options) : this.tableOps.loadTable(id)
+  }
+
+  /**
+   * Spec-aligned `LoadTableResult` wrapper, including server `config`,
+   * `storage-credentials`, and the response `ETag`. Returns `null` on 304.
+   */
+  async loadTableResult(
+    id: TableIdentifier,
+    options?: LoadTableOptions
+  ): Promise<LoadTableResultWithEtag | null> {
+    return this.tableOps.loadTableResult(id, options)
   }
 
   /**
    * Checks if a namespace exists in the catalog.
-   *
-   * @param id - Namespace identifier to check
-   * @returns True if the namespace exists, false otherwise
-   *
-   * @example
-   * ```typescript
-   * const exists = await catalog.namespaceExists({ namespace: ['analytics'] });
-   * console.log(exists); // true or false
-   * ```
    */
   async namespaceExists(id: NamespaceIdentifier): Promise<boolean> {
     return this.namespaceOps.namespaceExists(id)
@@ -309,15 +308,6 @@ export class IcebergRestCatalog {
 
   /**
    * Checks if a table exists in the catalog.
-   *
-   * @param id - Table identifier to check
-   * @returns True if the table exists, false otherwise
-   *
-   * @example
-   * ```typescript
-   * const exists = await catalog.tableExists({ namespace: ['analytics'], name: 'events' });
-   * console.log(exists); // true or false
-   * ```
    */
   async tableExists(id: TableIdentifier): Promise<boolean> {
     return this.tableOps.tableExists(id)
@@ -325,25 +315,6 @@ export class IcebergRestCatalog {
 
   /**
    * Creates a namespace if it does not exist.
-   *
-   * If the namespace already exists, returns void. If created, returns the response.
-   *
-   * @param id - Namespace identifier to create
-   * @param metadata - Optional metadata properties for the namespace
-   * @returns Response containing the created namespace and its properties, or void if it already exists
-   *
-   * @example
-   * ```typescript
-   * const response = await catalog.createNamespaceIfNotExists(
-   *   { namespace: ['analytics'] },
-   *   { properties: { owner: 'data-team' } }
-   * );
-   * if (response) {
-   *   console.log('Created:', response.namespace);
-   * } else {
-   *   console.log('Already exists');
-   * }
-   * ```
    */
   async createNamespaceIfNotExists(
     id: NamespaceIdentifier,
@@ -354,30 +325,6 @@ export class IcebergRestCatalog {
 
   /**
    * Creates a table if it does not exist.
-   *
-   * If the table already exists, returns its metadata instead.
-   *
-   * @param namespace - Namespace to create the table in
-   * @param request - Table creation request including name, schema, partition spec, etc.
-   * @returns Table metadata for the created or existing table
-   *
-   * @example
-   * ```typescript
-   * const metadata = await catalog.createTableIfNotExists(
-   *   { namespace: ['analytics'] },
-   *   {
-   *     name: 'events',
-   *     schema: {
-   *       type: 'struct',
-   *       fields: [
-   *         { id: 1, name: 'id', type: 'long', required: true },
-   *         { id: 2, name: 'timestamp', type: 'timestamp', required: true }
-   *       ],
-   *       'schema-id': 0
-   *     }
-   *   }
-   * );
-   * ```
    */
   async createTableIfNotExists(
     namespace: NamespaceIdentifier,
