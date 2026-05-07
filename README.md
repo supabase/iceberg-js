@@ -352,18 +352,17 @@ const catalog = new IcebergRestCatalog({
 const namespaces = await catalog.listNamespaces()
 ```
 
-## Node.js Usage
+## Custom fetch implementation
 
-Node.js 22+ includes native `fetch` support. For older versions, provide a custom fetch implementation:
+The library uses the global `fetch` by default (available in Node.js 22+ and modern browsers). You can inject a custom `fetch` for proxying, instrumentation, or to use a different HTTP client:
 
 ```typescript
 import { IcebergRestCatalog } from 'iceberg-js'
-import fetch from 'node-fetch'
 
 const catalog = new IcebergRestCatalog({
   baseUrl: 'https://catalog.example.com/iceberg/v1',
   auth: { type: 'bearer', token: 'token' },
-  fetch: fetch as any,
+  fetch: myCustomFetch,
 })
 ```
 
