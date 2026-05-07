@@ -1,4 +1,4 @@
 minimumReleaseAge: 20160 # 2 weeks
 blockExoticSubdeps: true
-onlyBuiltDependencies:
-  - esbuild
+allowBuilds:
+  esbuild: true
