@@ -50,6 +50,12 @@ export function createFetchClient(options: {
         body: body ? JSON.stringify(body) : undefined,
       })
 
+      // 304 Not Modified is a valid response for conditional GETs (If-None-Match).
+      // Return early so callers can detect it without throwing.
+      if (res.status === 304) {
+        return { status: 304, headers: res.headers, data: undefined as T }
+      }
+
       const text = await res.text()
       const isJson = (res.headers.get('content-type') || '').includes('application/json')
       const data = isJson && text ? (JSON.parse(text) as T) : (text as T)

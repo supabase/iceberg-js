@@ -62,8 +62,8 @@ describe('Local Iceberg REST Catalog Integration', () => {
 
   describe('Namespace Operations', () => {
     it('should list namespaces', async () => {
-      const namespaces = await catalog.listNamespaces()
-      expect(Array.isArray(namespaces)).toBe(true)
+      const result = await catalog.listNamespaces()
+      expect(Array.isArray(result.namespaces)).toBe(true)
     })
 
     it('should create a namespace', async () => {
@@ -72,8 +72,8 @@ describe('Local Iceberg REST Catalog Integration', () => {
         { properties: { owner: 'iceberg-js-test' } }
       )
 
-      const namespaces = await catalog.listNamespaces()
-      const testNs = namespaces.find((ns) => ns.namespace[0] === 'test')
+      const result = await catalog.listNamespaces()
+      const testNs = result.namespaces.find((ns) => ns.namespace[0] === 'test')
       expect(testNs).toBeDefined()
     })
   })
@@ -113,10 +113,10 @@ describe('Local Iceberg REST Catalog Integration', () => {
     })
 
     it('should list tables in namespace', async () => {
-      const tables = await catalog.listTables({ namespace: ['test'] })
+      const result = await catalog.listTables({ namespace: ['test'] })
 
-      expect(Array.isArray(tables)).toBe(true)
-      const usersTable = tables.find((t) => t.name === 'users')
+      expect(Array.isArray(result.identifiers)).toBe(true)
+      const usersTable = result.identifiers.find((t) => t.name === 'users')
       expect(usersTable).toBeDefined()
     })
 
@@ -132,14 +132,19 @@ describe('Local Iceberg REST Catalog Integration', () => {
       expect(currentSchema?.fields[0].name).toBe('id')
     })
 
-    it('should update table properties', async () => {
+    it('should update table properties via spec-aligned commit', async () => {
       const result = await catalog.updateTable(
         { namespace: ['test'], name: 'users' },
         {
-          properties: {
-            'read.split.target-size': '134217728',
-            'write.parquet.compression-codec': 'snappy',
-          },
+          updates: [
+            {
+              action: 'set-properties',
+              updates: {
+                'read.split.target-size': '134217728',
+                'write.parquet.compression-codec': 'snappy',
+              },
+            },
+          ],
         }
       )
 
