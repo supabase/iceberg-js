@@ -79,11 +79,11 @@ async function main() {
     console.log('  Location:', tableMetadata.location)
     console.log('  Schema ID:', tableMetadata['current-schema-id'])
 
-    // List all tables in the namespace
-    const tables = await catalog.listTables({ namespace: ['default'] })
+    // List all tables in the namespace (paginated)
+    const { identifiers } = await catalog.listTables({ namespace: ['default'] })
     console.log(
       '✓ Tables in default namespace:',
-      tables.map((t) => t.name)
+      identifiers.map((t) => t.name)
     )
 
     // Load the table metadata

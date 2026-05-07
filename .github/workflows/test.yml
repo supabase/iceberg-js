@@ -28,6 +28,11 @@ jobs:
       - name: Install dependencies
         run: pnpm i
 
+      - name: Generate spec-derived types
+        # Ensures `test/spec-conformance/types.test.ts` runs against the latest
+        # OpenAPI YAML in `tmp/`. The output file is gitignored.
+        run: pnpm run gen:spec-types
+
       - name: Run linter
         run: pnpm run lint
 
