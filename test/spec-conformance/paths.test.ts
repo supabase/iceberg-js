@@ -44,6 +44,26 @@ function makeFetch(): typeof fetch {
     }
     if (method === 'HEAD') return new Response(null, { status: 200 })
     if (method === 'DELETE') return new Response(null, { status: 204 })
+    if (url.endsWith('/tables/rename') || url.includes('/tables/rename?')) {
+      return new Response(null, { status: 204 })
+    }
+    if (url.endsWith('/register') || url.includes('/register?')) {
+      return new Response(
+        JSON.stringify({
+          metadata: {
+            'format-version': 2,
+            'table-uuid': '00000000-0000-0000-0000-000000000001',
+            'current-schema-id': 0,
+            schemas: [{ type: 'struct', fields: [], 'schema-id': 0 }],
+            'partition-specs': [{ 'spec-id': 0, fields: [] }],
+            'sort-orders': [{ 'order-id': 0, fields: [] }],
+            properties: {},
+          },
+          'metadata-location': 's3://b/m.json',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    }
     if (url.includes('/namespaces/') && url.includes('/tables/')) {
       return new Response(
         JSON.stringify({
@@ -110,9 +130,21 @@ describe('Spec conformance — paths and methods', () => {
     await catalog.tableExists({ namespace: ['analytics'], name: 'events' })
     await catalog.updateTable(
       { namespace: ['analytics'], name: 'events' },
-      { updates: [{ action: 'set-properties', updates: { a: 'b' } }] }
+      { requirements: [], updates: [{ action: 'set-properties', updates: { a: 'b' } }] }
     )
     await catalog.dropTable({ namespace: ['analytics'], name: 'events' })
+    await catalog.registerTable(
+      { namespace: ['analytics'] },
+      { name: 'reg', 'metadata-location': 's3://b/m.json' }
+    )
+    await catalog.renameTable({
+      source: { namespace: ['analytics'], name: 'events' },
+      destination: { namespace: ['analytics'], name: 'events_v2' },
+    })
+    await catalog.commitTable(
+      { namespace: ['analytics'], name: 'events' },
+      { requirements: [], updates: [] }
+    )
 
     expect(captured.length).toBeGreaterThan(0)
 
@@ -145,9 +177,18 @@ describe('Spec conformance — paths and methods', () => {
       { namespace: ['x'] },
       { name: 't', schema: { type: 'struct', fields: [], 'schema-id': 0 } }
     )
-    await catalog.updateTable({ namespace: ['x'], name: 't' }, { updates: [] })
+    await catalog.updateTable({ namespace: ['x'], name: 't' }, { requirements: [], updates: [] })
+    await catalog.commitTable({ namespace: ['x'], name: 't' }, { requirements: [], updates: [] })
     await catalog.dropTable({ namespace: ['x'], name: 't' })
     await catalog.updateNamespaceProperties({ namespace: ['x'] }, { updates: { k: 'v' } })
+    await catalog.registerTable(
+      { namespace: ['x'] },
+      { name: 'r', 'metadata-location': 's3://b/m.json' }
+    )
+    await catalog.renameTable({
+      source: { namespace: ['x'], name: 't' },
+      destination: { namespace: ['x'], name: 'u' },
+    })
 
     const mutations = captured.filter((r) => ['POST', 'DELETE'].includes(r.method))
     expect(mutations.length).toBeGreaterThan(0)

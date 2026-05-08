@@ -2,13 +2,20 @@ import { describe, it, expectTypeOf } from 'vitest'
 import type {
   CatalogConfig,
   CommitTableRequest,
+  CommitTableResponse,
   CreateNamespaceRequest,
   CreateNamespaceResponse,
   CreateTableRequest,
   GetNamespaceResponse,
   ListNamespacesResponse,
   ListTablesResponse,
+  LoadTableResponse,
+  RegisterTableRequest,
+  RenameTableRequest,
   TableIdentifier,
+  TableMetadata,
+  TableRequirement,
+  TableUpdate,
   UpdateNamespacePropertiesRequest,
   UpdateNamespacePropertiesResponse,
 } from '../../src/catalog/types'
@@ -76,6 +83,38 @@ describe('Spec conformance — handwritten types extend spec-derived types', () 
 
   it('ListTablesResponse', () => {
     expectTypeOf<ListTablesResponse>().toExtend<NonNullable<Schemas['ListTablesResponse']>>()
+  })
+
+  it('TableMetadata', () => {
+    expectTypeOf<TableMetadata>().toExtend<NonNullable<Schemas['TableMetadata']>>()
+  })
+
+  it('LoadTableResponse (= spec LoadTableResult)', () => {
+    expectTypeOf<LoadTableResponse>().toExtend<NonNullable<Schemas['LoadTableResult']>>()
+  })
+
+  it('CommitTableResponse', () => {
+    expectTypeOf<CommitTableResponse>().toExtend<NonNullable<Schemas['CommitTableResponse']>>()
+  })
+
+  it('RegisterTableRequest', () => {
+    expectTypeOf<RegisterTableRequest>().toExtend<NonNullable<Schemas['RegisterTableRequest']>>()
+  })
+
+  it('RenameTableRequest', () => {
+    expectTypeOf<RenameTableRequest>().toExtend<NonNullable<Schemas['RenameTableRequest']>>()
+  })
+
+  it('TableUpdate (23-variant discriminated union)', () => {
+    expectTypeOf<TableUpdate>().toExtend<NonNullable<Schemas['TableUpdate']>>()
+  })
+
+  it('TableRequirement (8-variant discriminated union)', () => {
+    expectTypeOf<TableRequirement>().toExtend<NonNullable<Schemas['TableRequirement']>>()
+  })
+
+  it('CommitTableRequest (`requirements` is required per spec)', () => {
+    expectTypeOf<CommitTableRequest>().toExtend<NonNullable<Schemas['CommitTableRequest']>>()
   })
 })
 

@@ -1,4 +1,4 @@
 {
-  "tag": "apache-iceberg-1.10.0",
-  "_comment": "Single source of truth for the Iceberg REST OpenAPI version this client tracks. Re-exported as ICEBERG_REST_SPEC_TAG, used by scripts/spec-source.mjs and test/spec-conformance/load-spec.ts to fetch the YAML at build/test time. Bump together with a release."
+  "tag": "apache-iceberg-1.11.0-rc1",
+  "_comment": "Single source of truth for the Iceberg REST OpenAPI version this client tracks. Re-exported as ICEBERG_REST_SPEC_TAG, used by scripts/spec-source.mjs and test/spec-conformance/load-spec.ts to fetch the YAML at build/test time. Bump together with a release. Note: bumped from 1.10.0 to 1.11.0-rc1 because the client emits Idempotency-Key headers which were not part of 1.10.0 — the spec-conformance tests would reject the implementation against the older tag."
 }

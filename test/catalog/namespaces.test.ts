@@ -250,7 +250,7 @@ describe('NamespaceOperations', () => {
       await ops.dropNamespace({ namespace: ['analytics', 'prod'] })
 
       const callArg = vi.mocked(mockClient.request).mock.calls[0][0]
-      expect(callArg.path).toBe('/v1/namespaces/analytics\x1Fprod')
+      expect(callArg.path).toBe('/v1/namespaces/analytics%1Fprod')
     })
   })
 
@@ -291,7 +291,7 @@ describe('NamespaceOperations', () => {
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics\x1Fprod',
+        path: '/v1/namespaces/analytics%1Fprod',
       })
     })
   })

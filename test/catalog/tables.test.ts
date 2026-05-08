@@ -95,7 +95,7 @@ describe('TableOperations', () => {
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics\x1Fprod/tables',
+        path: '/v1/namespaces/analytics%1Fprod/tables',
         query: undefined,
       })
     })
@@ -233,7 +233,7 @@ describe('TableOperations', () => {
 
       expect(mockClient.request).toHaveBeenCalledWith({
         method: 'GET',
-        path: '/v1/namespaces/analytics\x1Fprod/tables/events',
+        path: '/v1/namespaces/analytics%1Fprod/tables/events',
         headers: {},
       })
     })
@@ -325,6 +325,7 @@ describe('TableOperations', () => {
       const result = await ops.updateTable(
         { namespace: ['analytics'], name: 'events' },
         {
+          requirements: [],
           updates: [
             {
               action: 'set-properties',
@@ -342,6 +343,7 @@ describe('TableOperations', () => {
       expect(callArg.method).toBe('POST')
       expect(callArg.path).toBe('/v1/namespaces/analytics/tables/events')
       expect(callArg.body).toEqual({
+        requirements: [],
         updates: [{ action: 'set-properties', updates: { 'read.split.target-size': '134217728' } }],
       })
       expect(callArg.headers?.['Idempotency-Key']).toMatch(UUID_RE)

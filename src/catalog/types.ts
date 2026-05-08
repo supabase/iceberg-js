@@ -289,10 +289,13 @@ export interface RenameTableRequest {
 /**
  * Spec-aligned table commit request shape: requirements + updates arrays.
  * Used by `updateTable` / `commitTable`.
+ *
+ * Both `requirements` and `updates` are required by the spec — pass an empty
+ * array if there are no preconditions to assert.
  */
 export interface CommitTableRequest {
   identifier?: TableIdentifier
-  requirements?: TableRequirement[]
+  requirements: TableRequirement[]
   updates: TableUpdate[]
 }
 
@@ -632,6 +635,13 @@ export interface ListTablesResult {
 export interface LoadTableOptions {
   /** ETag value from a previous response; server returns 304 (and we return null) if unchanged. */
   ifNoneMatch?: string
+  /**
+   * Which snapshots the server should include in the returned metadata.
+   * - `'all'`: return every snapshot currently valid for the table
+   * - `'refs'`: only snapshots referenced by branches or tags
+   * Default if omitted is `'all'` per spec.
+   */
+  snapshots?: 'all' | 'refs'
 }
 
 export interface LoadTableResultWithEtag extends LoadTableResponse {

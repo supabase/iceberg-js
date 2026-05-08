@@ -9,7 +9,7 @@
 
 A small, framework-agnostic JavaScript/TypeScript client for the **Apache Iceberg REST Catalog**.
 
-Tracks the OpenAPI spec at `apache-iceberg-1.10.0`. The exact tag is exported as `ICEBERG_REST_SPEC_TAG` and is the source of truth for the conformance tests in CI — see [`spec-pin.json`](./spec-pin.json).
+Tracks the OpenAPI spec at `apache-iceberg-1.11.0-rc1`. The exact tag is exported as `ICEBERG_REST_SPEC_TAG` and is the source of truth for the conformance tests in CI — see [`spec-pin.json`](./spec-pin.json).
 
 ## Motivation
 
@@ -42,7 +42,7 @@ These boundaries keep the library focused and maintainable. For data operations,
 - **Type-safe**: First-class TypeScript support with strongly-typed request/response models
 - **Fetch-based**: Uses native `fetch` API with support for custom implementations
 - **Universal**: Targets Node 22+ and modern browsers (ES2020)
-- **Catalog-only**: Focused on catalog operations (no data reading/Parquet support in v0.1.0)
+- **Catalog-only**: Focused on catalog operations (no data reading/Parquet support in v1.0)
 
 ## Documentation
 
@@ -65,14 +65,19 @@ The 1.0 release aligns the client with the [Apache Iceberg REST Catalog OpenAPI 
 | `await catalog.listTables({ namespace: ['x'] })` returns `TableIdentifier[]` | returns `{ identifiers: TableIdentifier[]; nextPageToken? }`                                                                                                                 |
 | `updateTable({ properties: { … } })`                                         | `updateTable({ updates: [{ action: 'set-properties', updates: { … } }] })`                                                                                                   |
 | `catalogName` builds the path manually as `/v1/<name>/...`                   | `warehouse` (or `catalogName` as alias) goes through `GET /v1/config` and uses the server-returned `prefix`. Closes [#32](https://github.com/supabase/iceberg-js/issues/32). |
+| Supported Node 18+                                                           | Now requires Node 22+ (Node 18 and 20 are EOL or near-EOL). Drop in [#46](https://github.com/supabase/iceberg-js/pull/46).                                                   |
 
 Non-breaking additions:
 
 - `Idempotency-Key` is automatically emitted on every POST/DELETE mutation.
 - `loadTable(id, { ifNoneMatch })` enables conditional GETs (returns `null` on 304).
+- `loadTable(id, { snapshots: 'all' | 'refs' })` controls how many snapshots the server includes.
 - `loadTableResult(id, options?)` returns the full spec-shaped `LoadTableResult` plus the response `ETag`.
+- `createTableResult(namespace, request)` mirror — returns the full spec-shaped `LoadTableResult` (so `accessDelegation: ['vended-credentials']` callers can read the server-vended credentials).
+- `registerTable(namespace, request)` and `renameTable(request)` are now exposed.
 - `updateNamespaceProperties` is now exposed.
 - The full `TableUpdate` and `TableRequirement` discriminated unions are exported.
+- Network-level errors (DNS, TLS, offline) now surface as `IcebergError` with `status: 0`, so a single `instanceof IcebergError` check catches every failure mode.
 
 ## Quick Start
 
@@ -171,9 +176,11 @@ const catalog = new IcebergRestCatalog({
   accessDelegation: ['vended-credentials'],
 })
 
-// The server may return temporary credentials in the table metadata
-const metadata = await catalog.loadTable({ namespace: ['analytics'], name: 'events' })
-// Use credentials from metadata.config to access table data files
+// To access vended credentials (storage-credentials, server config), use the
+// *Result variants — `loadTable`/`createTable`/`registerTable` return only
+// the bare `TableMetadata` and would discard credentials.
+const result = await catalog.loadTableResult({ namespace: ['analytics'], name: 'events' })
+// result['storage-credentials'], result.config, result.etag, result.metadata
 ```
 
 Supported delegation mechanisms:

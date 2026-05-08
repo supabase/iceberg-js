@@ -14,7 +14,26 @@ import type {
   UpdateNamespacePropertiesResponse,
 } from './types'
 
+/**
+ * Encode a multipart namespace for use as a single URL path segment.
+ *
+ * Each part is encoded with `encodeURIComponent` (so `/`, `?`, `#`, `%` etc.
+ * inside a part survive intact), and parts are joined with the literal `%1F`
+ * separator the spec calls for. Note: relying on the URL constructor to
+ * encode a raw `\x1F` byte does the right thing for the separator but does
+ * NOT encode `/`, `?`, `#`, `%` inside a part — hence the per-part
+ * `encodeURIComponent` here.
+ *
+ * For the `parent` *query* parameter (not path), the raw `\x1F` join is the
+ * correct input — `URLSearchParams.set` percent-encodes it to `%1F` and
+ * pre-encoding would double-encode the `%` to `%25`.
+ */
 function namespaceToPath(namespace: string[]): string {
+  return namespace.map(encodeURIComponent).join('%1F')
+}
+
+function namespaceToParentQuery(namespace: string[]): string {
+  // Raw 0x1F — URLSearchParams encodes to %1F. Do NOT pre-encode parts here.
   return namespace.join('\x1F')
 }
 
@@ -41,7 +60,7 @@ export class NamespaceOperations {
     const prefix = await resolvePrefix(this.prefix)
 
     const query: Record<string, string | undefined> = {}
-    if (options.parent) query.parent = namespaceToPath(options.parent.namespace)
+    if (options.parent) query.parent = namespaceToParentQuery(options.parent.namespace)
     if (options.pageToken !== undefined) query.pageToken = options.pageToken
     if (options.pageSize !== undefined) query.pageSize = String(options.pageSize)
     const hasQuery = Object.keys(query).some((k) => query[k] !== undefined)

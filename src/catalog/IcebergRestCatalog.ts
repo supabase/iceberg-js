@@ -17,6 +17,8 @@ import type {
   LoadTableResultWithEtag,
   NamespaceIdentifier,
   NamespaceMetadata,
+  RegisterTableRequest,
+  RenameTableRequest,
   TableIdentifier,
   TableMetadata,
   UpdateNamespacePropertiesRequest,
@@ -91,7 +93,7 @@ export class IcebergRestCatalog {
   private readonly warehouse?: string
 
   private prefixPromise?: Promise<string>
-  private cachedConfig?: CatalogConfig
+  private cachedConfigPromise?: Promise<CatalogConfig>
 
   /**
    * Creates a new Iceberg REST Catalog client.
@@ -121,18 +123,28 @@ export class IcebergRestCatalog {
    * Fetch and cache the server's catalog configuration. Subsequent calls return
    * the same object. Calling this is optional — operations will trigger it
    * lazily on first use.
+   *
+   * Caches the in-flight promise (not just the resolved value) so concurrent
+   * first-callers don't all fire their own `/v1/config` request.
    */
   async loadConfig(): Promise<CatalogConfig> {
-    if (this.cachedConfig) return this.cachedConfig
-    const query: Record<string, string | undefined> = {}
-    if (this.warehouse !== undefined) query.warehouse = this.warehouse
-    const response = await this.client.request<CatalogConfig>({
-      method: 'GET',
-      path: 'v1/config',
-      query: Object.keys(query).length ? query : undefined,
-    })
-    this.cachedConfig = response.data
-    return response.data
+    if (!this.cachedConfigPromise) {
+      const query: Record<string, string | undefined> = {}
+      if (this.warehouse !== undefined) query.warehouse = this.warehouse
+      this.cachedConfigPromise = this.client
+        .request<CatalogConfig>({
+          method: 'GET',
+          path: 'v1/config',
+          query: Object.keys(query).length ? query : undefined,
+        })
+        .then((response) => response.data)
+        .catch((err) => {
+          // Don't cache failures — the next caller deserves to try again.
+          this.cachedConfigPromise = undefined
+          throw err
+        })
+    }
+    return this.cachedConfigPromise
   }
 
   private async resolvePrefix(): Promise<string> {
@@ -241,6 +253,19 @@ export class IcebergRestCatalog {
   }
 
   /**
+   * Spec-aligned `LoadTableResult` wrapper for create. Returns the full server
+   * response (metadata, metadata-location, server `config`, `storage-credentials`)
+   * plus the captured ETag. Use this when `accessDelegation` is set so the
+   * server-vended credentials are reachable.
+   */
+  async createTableResult(
+    namespace: NamespaceIdentifier,
+    request: CreateTableRequest
+  ): Promise<LoadTableResultWithEtag> {
+    return this.tableOps.createTableResult(namespace, request)
+  }
+
+  /**
    * Commit updates to a table using the spec-aligned `{ requirements, updates }` shape.
    *
    * @example
@@ -331,5 +356,32 @@ export class IcebergRestCatalog {
     request: CreateTableRequest
   ): Promise<TableMetadata> {
     return this.tableOps.createTableIfNotExists(namespace, request)
+  }
+
+  /**
+   * Register an existing metadata file as a table in the given namespace.
+   */
+  async registerTable(
+    namespace: NamespaceIdentifier,
+    request: RegisterTableRequest
+  ): Promise<TableMetadata> {
+    return this.tableOps.registerTable(namespace, request)
+  }
+
+  /**
+   * Spec-aligned `LoadTableResult` wrapper for register.
+   */
+  async registerTableResult(
+    namespace: NamespaceIdentifier,
+    request: RegisterTableRequest
+  ): Promise<LoadTableResultWithEtag> {
+    return this.tableOps.registerTableResult(namespace, request)
+  }
+
+  /**
+   * Rename a table. Servers may or may not support cross-namespace renames.
+   */
+  async renameTable(request: RenameTableRequest): Promise<void> {
+    return this.tableOps.renameTable(request)
   }
 }

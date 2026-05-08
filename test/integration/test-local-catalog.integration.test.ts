@@ -136,6 +136,7 @@ describe('Local Iceberg REST Catalog Integration', () => {
       const result = await catalog.updateTable(
         { namespace: ['test'], name: 'users' },
         {
+          requirements: [],
           updates: [
             {
               action: 'set-properties',

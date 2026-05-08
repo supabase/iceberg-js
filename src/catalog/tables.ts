@@ -14,13 +14,19 @@ import type {
   LoadTableResponse,
   LoadTableResultWithEtag,
   NamespaceIdentifier,
+  RegisterTableRequest,
+  RenameTableRequest,
   TableIdentifier,
   TableMetadata,
   UpdateTableRequest,
 } from './types'
 
 function namespaceToPath(namespace: string[]): string {
-  return namespace.join('\x1F')
+  return namespace.map(encodeURIComponent).join('%1F')
+}
+
+function tableSegment(name: string): string {
+  return encodeURIComponent(name)
 }
 
 async function resolvePrefix(p: PrefixResolver): Promise<string> {
@@ -60,6 +66,20 @@ export class TableOperations {
     namespace: NamespaceIdentifier,
     request: CreateTableRequest
   ): Promise<TableMetadata> {
+    const result = await this.createTableResult(namespace, request)
+    return result.metadata
+  }
+
+  /**
+   * Spec-aligned `LoadTableResult` wrapper for create. Returns the full server
+   * response (metadata, metadata-location, config, storage-credentials) plus
+   * the captured ETag header. Use this when `accessDelegation` is set so the
+   * server-vended credentials are reachable.
+   */
+  async createTableResult(
+    namespace: NamespaceIdentifier,
+    request: CreateTableRequest
+  ): Promise<LoadTableResultWithEtag> {
     const prefix = await resolvePrefix(this.prefix)
     const headers: Record<string, string> = { 'Idempotency-Key': generateIdempotencyKey() }
     if (this.accessDelegation) {
@@ -73,7 +93,10 @@ export class TableOperations {
       headers,
     })
 
-    return response.data.metadata
+    return {
+      ...response.data,
+      etag: response.headers.get('etag'),
+    }
   }
 
   async updateTable(
@@ -83,13 +106,24 @@ export class TableOperations {
     const prefix = await resolvePrefix(this.prefix)
     const response = await this.client.request<LoadTableResponse>({
       method: 'POST',
-      path: `${prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      path: `${prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${tableSegment(id.name)}`,
       body: request,
       headers: { 'Idempotency-Key': generateIdempotencyKey() },
     })
 
+    const metadataLocation = response.data['metadata-location']
+    if (!metadataLocation) {
+      // Spec requires both `metadata` and `metadata-location` on
+      // CommitTableResponse. A 200 without `metadata-location` means the
+      // server is misbehaving; surface it instead of silently returning ''.
+      throw new IcebergError(
+        'Server returned 200 without required `metadata-location` field on CommitTableResponse',
+        { status: response.status, details: response.data }
+      )
+    }
+
     return {
-      'metadata-location': response.data['metadata-location'] ?? '',
+      'metadata-location': metadataLocation,
       metadata: response.data.metadata,
     }
   }
@@ -106,7 +140,7 @@ export class TableOperations {
     const prefix = await resolvePrefix(this.prefix)
     await this.client.request<void>({
       method: 'DELETE',
-      path: `${prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      path: `${prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${tableSegment(id.name)}`,
       query: { purgeRequested: String(options?.purge ?? false) },
       headers: { 'Idempotency-Key': generateIdempotencyKey() },
     })
@@ -137,11 +171,14 @@ export class TableOperations {
     if (options?.ifNoneMatch) {
       headers['If-None-Match'] = options.ifNoneMatch
     }
+    const query: Record<string, string | undefined> = {}
+    if (options?.snapshots) query.snapshots = options.snapshots
 
     const response = await this.client.request<LoadTableResponse>({
       method: 'GET',
-      path: `${prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+      path: `${prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${tableSegment(id.name)}`,
       headers,
+      query: Object.keys(query).length ? query : undefined,
     })
 
     if (response.status === 304) {
@@ -164,7 +201,7 @@ export class TableOperations {
     try {
       await this.client.request<void>({
         method: 'HEAD',
-        path: `${prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${id.name}`,
+        path: `${prefix}/namespaces/${namespaceToPath(id.namespace)}/tables/${tableSegment(id.name)}`,
         headers,
       })
       return true
@@ -174,6 +211,45 @@ export class TableOperations {
       }
       throw error
     }
+  }
+
+  async registerTable(
+    namespace: NamespaceIdentifier,
+    request: RegisterTableRequest
+  ): Promise<TableMetadata> {
+    const result = await this.registerTableResult(namespace, request)
+    return result.metadata
+  }
+
+  async registerTableResult(
+    namespace: NamespaceIdentifier,
+    request: RegisterTableRequest
+  ): Promise<LoadTableResultWithEtag> {
+    const prefix = await resolvePrefix(this.prefix)
+    const headers: Record<string, string> = { 'Idempotency-Key': generateIdempotencyKey() }
+    if (this.accessDelegation) {
+      headers['X-Iceberg-Access-Delegation'] = this.accessDelegation
+    }
+    const response = await this.client.request<LoadTableResponse>({
+      method: 'POST',
+      path: `${prefix}/namespaces/${namespaceToPath(namespace.namespace)}/register`,
+      body: request,
+      headers,
+    })
+    return {
+      ...response.data,
+      etag: response.headers.get('etag'),
+    }
+  }
+
+  async renameTable(request: RenameTableRequest): Promise<void> {
+    const prefix = await resolvePrefix(this.prefix)
+    await this.client.request<void>({
+      method: 'POST',
+      path: `${prefix}/tables/rename`,
+      body: request,
+      headers: { 'Idempotency-Key': generateIdempotencyKey() },
+    })
   }
 
   async createTableIfNotExists(

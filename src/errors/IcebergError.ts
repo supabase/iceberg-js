@@ -30,10 +30,10 @@ export class IcebergError extends Error {
     this.icebergCode = opts.icebergCode
     this.details = opts.details
 
-    // Detect CommitStateUnknownException (500, 502, 504 during table commits)
-    this.isCommitStateUnknown =
-      opts.icebergType === 'CommitStateUnknownException' ||
-      ([500, 502, 504].includes(opts.status) && opts.icebergType?.includes('CommitState') === true)
+    // Detect CommitStateUnknownException by exact type match. The previous
+    // `includes('CommitState')` substring check would false-positive on
+    // unrelated exception types and is not a thing the spec defines.
+    this.isCommitStateUnknown = opts.icebergType === 'CommitStateUnknownException'
   }
 
   /**

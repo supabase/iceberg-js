@@ -9,7 +9,11 @@ let cached: SpecBundle | undefined
 
 interface OpenAPIDoc {
   paths: Record<string, Record<string, unknown>>
-  components: { schemas: Record<string, unknown> }
+  components: {
+    schemas: Record<string, unknown>
+    responses?: Record<string, unknown>
+    parameters?: Record<string, unknown>
+  }
 }
 
 export interface SpecBundle {
@@ -36,12 +40,16 @@ export async function loadSpec(): Promise<SpecBundle> {
   if (cached) return cached
 
   const raw = await loadSpecYaml()
-  const parsed = yaml.load(raw) as OpenAPIDoc
+  // Parse twice so the doc we hand to $RefParser.bundle (which mutates its
+  // input — notably stripping `parameters` from operation objects) doesn't
+  // contaminate the doc we use for path/operation traversal.
+  const docForPaths = yaml.load(raw) as OpenAPIDoc
+  const docToBundle = yaml.load(raw) as OpenAPIDoc
   // `bundle` resolves external refs but preserves *internal* $refs, which Ajv
   // handles natively via `addSchema`. Using `dereference` here would inline
   // recursive schemas (Type/Schema/StructField, TableMetadata, etc.) and blow
   // the stack at compile time.
-  const bundled = (await $RefParser.bundle(parsed as never)) as OpenAPIDoc
+  const bundled = (await $RefParser.bundle(docToBundle as never)) as OpenAPIDoc
 
   const ajv = new Ajv({
     strict: false,
@@ -78,16 +86,44 @@ export async function loadSpec(): Promise<SpecBundle> {
       compileFailures[name] = err instanceof Error ? err.message : String(err)
     }
   }
-  if (process.env.SPEC_COMPILE_DEBUG) {
-    console.error(`[load-spec] ${Object.keys(compileFailures).length} schemas failed to compile:`)
-    for (const [name, msg] of Object.entries(compileFailures)) {
-      console.error(`  ${name}: ${msg}`)
-    }
+  // Schemas the conformance tests rely on. If any of these fail to compile,
+  // the whole suite is meaningless — silent skips are how drift slips through.
+  const REQUIRED_SCHEMAS = [
+    'CatalogConfig',
+    'CommitTableRequest',
+    'CommitTableResponse',
+    'CreateNamespaceRequest',
+    'CreateNamespaceResponse',
+    'CreateTableRequest',
+    'GetNamespaceResponse',
+    'IcebergErrorResponse',
+    'ListNamespacesResponse',
+    'ListTablesResponse',
+    'LoadTableResult',
+    'RegisterTableRequest',
+    'RenameTableRequest',
+    'TableMetadata',
+    'TableRequirement',
+    'TableUpdate',
+    'UpdateNamespacePropertiesRequest',
+    'UpdateNamespacePropertiesResponse',
+  ]
+  const missingRequired = REQUIRED_SCHEMAS.filter(
+    (name) => !validators.has(name) || compileFailures[name]
+  )
+  if (missingRequired.length > 0) {
+    const detail = missingRequired
+      .map((name) => `  ${name}: ${compileFailures[name] ?? '(not registered)'}`)
+      .join('\n')
+    throw new Error(
+      `[load-spec] required schemas failed to compile:\n${detail}\n` +
+        `Drift here would silently skip validation — fix before running tests.`
+    )
   }
 
   const operations = new Set<string>()
   const pathMethods = new Map<string, Set<string>>()
-  for (const [path, ops] of Object.entries(bundled.paths)) {
+  for (const [path, ops] of Object.entries(docForPaths.paths)) {
     for (const method of Object.keys(ops)) {
       const m = method.toUpperCase()
       if (!HTTP_METHODS.has(m)) continue
@@ -101,7 +137,7 @@ export async function loadSpec(): Promise<SpecBundle> {
     }
   }
 
-  cached = { doc: bundled, ajv, validators, operations, pathMethods }
+  cached = { doc: docForPaths, ajv, validators, operations, pathMethods }
   return cached
 }
 
@@ -126,7 +162,6 @@ async function loadSpecYaml(): Promise<string> {
   }
 
   const url = process.env.ICEBERG_SPEC_URL || ICEBERG_REST_SPEC_URL
-  // eslint-disable-next-line no-console
   console.error(`[load-spec] fetching ${url}`)
   const res = await fetch(url)
   if (!res.ok) {
@@ -182,27 +217,38 @@ function rewriteRefs(value: unknown): void {
  *
  * Returns the matched template, or `undefined` if no spec path matches.
  *
- * The matching is best-effort: it handles simple `{var}` placeholders and the
- * server-prefix segment, which the client may emit either as `v1` (no warehouse)
- * or `v1/<warehouse>` (after /config). Both shapes are accepted.
+ * The matching handles simple `{var}` placeholders and the server-prefix
+ * segment. Pass `{ warehouseConfigured: true }` to require the `{prefix}`
+ * slot to be present (i.e. a warehouse-configured client must always emit
+ * the resolved prefix; silent drops are caught here, not in production).
  */
-export function matchSpecPath(actualPath: string, specPaths: Iterable<string>): string | undefined {
+export function matchSpecPath(
+  actualPath: string,
+  specPaths: Iterable<string>,
+  options: { warehouseConfigured?: boolean } = {}
+): string | undefined {
   const actual = actualPath.startsWith('/') ? actualPath.slice(1) : actualPath
   const actualSegs = actual.split('/').filter(Boolean)
 
   for (const tpl of specPaths) {
     const tplNorm = tpl.startsWith('/') ? tpl.slice(1) : tpl
     const tplSegs = tplNorm.split('/').filter(Boolean)
-    if (matchesSegments(tplSegs, actualSegs)) return tpl
+    if (matchesSegments(tplSegs, actualSegs, options)) return tpl
   }
   return undefined
 }
 
-function matchesSegments(template: string[], actual: string[]): boolean {
-  // The spec uses `{prefix}` as a single optional segment (warehouse id).
-  // Real client requests may either emit it (after fetching /v1/config) or
-  // skip it (no warehouse configured), so we try both interpretations.
+function matchesSegments(
+  template: string[],
+  actual: string[],
+  options: { warehouseConfigured?: boolean }
+): boolean {
   if (template.includes('{prefix}')) {
+    // With a warehouse configured, the prefix slot MUST be filled — accepting
+    // the unprefixed form would hide a silent prefix-resolution bug.
+    if (options.warehouseConfigured) {
+      return compareTemplate(template, actual)
+    }
     return (
       compareTemplate(template, actual) ||
       compareTemplate(
