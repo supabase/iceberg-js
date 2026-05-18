@@ -40,15 +40,34 @@ export function createFetchClient(options: {
       const url = buildUrl(options.baseUrl, path, query)
       const authHeaders = await buildAuthHeaders(options.auth)
 
-      const res = await fetchFn(url, {
-        method,
-        headers: {
-          ...(body ? { 'Content-Type': 'application/json' } : {}),
-          ...authHeaders,
-          ...headers,
-        },
-        body: body ? JSON.stringify(body) : undefined,
-      })
+      let res: Response
+      try {
+        res = await fetchFn(url, {
+          method,
+          headers: {
+            ...(body ? { 'Content-Type': 'application/json' } : {}),
+            ...authHeaders,
+            ...headers,
+          },
+          body: body ? JSON.stringify(body) : undefined,
+        })
+      } catch (err) {
+        // Network-level failure (DNS, TLS, offline, AbortError, …). Surface
+        // it as IcebergError with status: 0 so consumers can rely on a single
+        // error class for everything from the client.
+        if (err instanceof IcebergError) throw err
+        const message = err instanceof Error ? err.message : String(err)
+        throw new IcebergError(`Network request failed: ${message}`, {
+          status: 0,
+          details: err,
+        })
+      }
+
+      // 304 Not Modified is a valid response for conditional GETs (If-None-Match).
+      // Return early so callers can detect it without throwing.
+      if (res.status === 304) {
+        return { status: 304, headers: res.headers, data: undefined as T }
+      }
 
       const text = await res.text()
       const isJson = (res.headers.get('content-type') || '').includes('application/json')

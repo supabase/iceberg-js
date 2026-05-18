@@ -10,8 +10,8 @@ async function main() {
   })
 
   try {
-    // List namespaces
-    const namespaces = await catalog.listNamespaces()
+    // List namespaces (paginated)
+    const { namespaces } = await catalog.listNamespaces()
     console.log('Namespaces:', namespaces)
 
     // Create namespace
@@ -20,8 +20,8 @@ async function main() {
       { properties: { owner: 'data-team' } }
     )
 
-    // List tables
-    const tables = await catalog.listTables({ namespace: ['analytics'] })
+    // List tables (paginated)
+    const { identifiers: tables } = await catalog.listTables({ namespace: ['analytics'] })
     console.log('Tables:', tables)
 
     // Create table

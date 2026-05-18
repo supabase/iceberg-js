@@ -194,13 +194,13 @@ export interface TableSchema {
 
 export interface PartitionField {
   'source-id': number
-  'field-id': number
+  'field-id'?: number
   name: string
   transform: string
 }
 
 export interface PartitionSpec {
-  'spec-id': number
+  'spec-id'?: number
   fields: PartitionField[]
 }
 
@@ -216,47 +216,329 @@ export interface SortOrder {
   fields: SortField[]
 }
 
+export interface SnapshotReference {
+  type: 'tag' | 'branch'
+  'snapshot-id': number
+  'max-ref-age-ms'?: number
+  'max-snapshot-age-ms'?: number
+  'min-snapshots-to-keep'?: number
+}
+
+export interface Snapshot {
+  'snapshot-id': number
+  'parent-snapshot-id'?: number
+  'sequence-number'?: number
+  'timestamp-ms': number
+  'manifest-list': string
+  summary: { operation: 'append' | 'replace' | 'overwrite' | 'delete'; [key: string]: string }
+  'schema-id'?: number
+  'first-row-id'?: number
+  'added-rows'?: number
+}
+
+export interface BlobMetadata {
+  type: string
+  'snapshot-id': number
+  'sequence-number': number
+  fields: number[]
+  properties?: Record<string, string>
+}
+
+export interface StatisticsFile {
+  'snapshot-id': number
+  'statistics-path': string
+  'file-size-in-bytes': number
+  'file-footer-size-in-bytes': number
+  'blob-metadata': BlobMetadata[]
+}
+
+export interface PartitionStatisticsFile {
+  'snapshot-id': number
+  'statistics-path': string
+  'file-size-in-bytes': number
+}
+
+export interface EncryptedKey {
+  'key-id': string
+  'encrypted-key-metadata': string
+  'encrypted-by-id'?: string
+  properties?: Record<string, string>
+}
+
 export interface CreateTableRequest {
   name: string
   schema: TableSchema
+  location?: string
   'partition-spec'?: PartitionSpec
   'write-order'?: SortOrder
   properties?: Record<string, string>
   'stage-create'?: boolean
 }
 
-export interface UpdateTableRequest {
-  schema?: TableSchema
-  'partition-spec'?: PartitionSpec
-  properties?: Record<string, string>
+export interface RegisterTableRequest {
+  name: string
+  'metadata-location': string
+  overwrite?: boolean
 }
+
+export interface RenameTableRequest {
+  source: TableIdentifier
+  destination: TableIdentifier
+}
+
+/**
+ * Spec-aligned table commit request shape: requirements + updates arrays.
+ * Used by `updateTable` / `commitTable`.
+ *
+ * Both `requirements` and `updates` are required by the spec — pass an empty
+ * array if there are no preconditions to assert.
+ */
+export interface CommitTableRequest {
+  identifier?: TableIdentifier
+  requirements: TableRequirement[]
+  updates: TableUpdate[]
+}
+
+/**
+ * @deprecated Use `CommitTableRequest` (with `updates` and optional `requirements`) instead.
+ * This alias is kept for callers migrating from 0.x; new code should use the spec-aligned shape.
+ */
+export type UpdateTableRequest = CommitTableRequest
+
+/* ===== TableUpdate discriminated union (per OpenAPI spec) ===== */
+
+export interface AssignUUIDUpdate {
+  action: 'assign-uuid'
+  uuid: string
+}
+
+export interface UpgradeFormatVersionUpdate {
+  action: 'upgrade-format-version'
+  'format-version': number
+}
+
+export interface AddSchemaUpdate {
+  action: 'add-schema'
+  schema: TableSchema
+  /** @deprecated server-managed; included for backward compat with older catalogs */
+  'last-column-id'?: number
+}
+
+export interface SetCurrentSchemaUpdate {
+  action: 'set-current-schema'
+  'schema-id': number
+}
+
+export interface AddPartitionSpecUpdate {
+  action: 'add-spec'
+  spec: PartitionSpec
+}
+
+export interface SetDefaultSpecUpdate {
+  action: 'set-default-spec'
+  'spec-id': number
+}
+
+export interface AddSortOrderUpdate {
+  action: 'add-sort-order'
+  'sort-order': SortOrder
+}
+
+export interface SetDefaultSortOrderUpdate {
+  action: 'set-default-sort-order'
+  'sort-order-id': number
+}
+
+export interface AddSnapshotUpdate {
+  action: 'add-snapshot'
+  snapshot: Snapshot
+}
+
+export interface SetSnapshotRefUpdate extends SnapshotReference {
+  action: 'set-snapshot-ref'
+  'ref-name': string
+}
+
+export interface RemoveSnapshotsUpdate {
+  action: 'remove-snapshots'
+  'snapshot-ids': number[]
+}
+
+export interface RemoveSnapshotRefUpdate {
+  action: 'remove-snapshot-ref'
+  'ref-name': string
+}
+
+export interface SetLocationUpdate {
+  action: 'set-location'
+  location: string
+}
+
+export interface SetPropertiesUpdate {
+  action: 'set-properties'
+  updates: Record<string, string>
+}
+
+export interface RemovePropertiesUpdate {
+  action: 'remove-properties'
+  removals: string[]
+}
+
+export interface SetStatisticsUpdate {
+  action: 'set-statistics'
+  statistics: StatisticsFile
+  /** @deprecated derive from `statistics.snapshot-id` */
+  'snapshot-id'?: number
+}
+
+export interface RemoveStatisticsUpdate {
+  action: 'remove-statistics'
+  'snapshot-id': number
+}
+
+export interface SetPartitionStatisticsUpdate {
+  action: 'set-partition-statistics'
+  'partition-statistics': PartitionStatisticsFile
+}
+
+export interface RemovePartitionStatisticsUpdate {
+  action: 'remove-partition-statistics'
+  'snapshot-id': number
+}
+
+export interface RemovePartitionSpecsUpdate {
+  action: 'remove-partition-specs'
+  'spec-ids': number[]
+}
+
+export interface RemoveSchemasUpdate {
+  action: 'remove-schemas'
+  'schema-ids': number[]
+}
+
+export interface AddEncryptionKeyUpdate {
+  action: 'add-encryption-key'
+  'encryption-key': EncryptedKey
+}
+
+export interface RemoveEncryptionKeyUpdate {
+  action: 'remove-encryption-key'
+  'key-id': string
+}
+
+export type TableUpdate =
+  | AssignUUIDUpdate
+  | UpgradeFormatVersionUpdate
+  | AddSchemaUpdate
+  | SetCurrentSchemaUpdate
+  | AddPartitionSpecUpdate
+  | SetDefaultSpecUpdate
+  | AddSortOrderUpdate
+  | SetDefaultSortOrderUpdate
+  | AddSnapshotUpdate
+  | SetSnapshotRefUpdate
+  | RemoveSnapshotsUpdate
+  | RemoveSnapshotRefUpdate
+  | SetLocationUpdate
+  | SetPropertiesUpdate
+  | RemovePropertiesUpdate
+  | SetStatisticsUpdate
+  | RemoveStatisticsUpdate
+  | SetPartitionStatisticsUpdate
+  | RemovePartitionStatisticsUpdate
+  | RemovePartitionSpecsUpdate
+  | RemoveSchemasUpdate
+  | AddEncryptionKeyUpdate
+  | RemoveEncryptionKeyUpdate
+
+/* ===== TableRequirement discriminated union (per OpenAPI spec) ===== */
+
+export interface AssertCreate {
+  type: 'assert-create'
+}
+
+export interface AssertTableUUID {
+  type: 'assert-table-uuid'
+  uuid: string
+}
+
+export interface AssertRefSnapshotId {
+  type: 'assert-ref-snapshot-id'
+  ref: string
+  'snapshot-id': number | null
+}
+
+export interface AssertLastAssignedFieldId {
+  type: 'assert-last-assigned-field-id'
+  'last-assigned-field-id': number
+}
+
+export interface AssertCurrentSchemaId {
+  type: 'assert-current-schema-id'
+  'current-schema-id': number
+}
+
+export interface AssertLastAssignedPartitionId {
+  type: 'assert-last-assigned-partition-id'
+  'last-assigned-partition-id': number
+}
+
+export interface AssertDefaultSpecId {
+  type: 'assert-default-spec-id'
+  'default-spec-id': number
+}
+
+export interface AssertDefaultSortOrderId {
+  type: 'assert-default-sort-order-id'
+  'default-sort-order-id': number
+}
+
+export type TableRequirement =
+  | AssertCreate
+  | AssertTableUUID
+  | AssertRefSnapshotId
+  | AssertLastAssignedFieldId
+  | AssertCurrentSchemaId
+  | AssertLastAssignedPartitionId
+  | AssertDefaultSpecId
+  | AssertDefaultSortOrderId
 
 export interface DropTableRequest {
   purge?: boolean
 }
 
 export interface TableMetadata {
-  name?: string
-  location: string
+  'format-version': number
+  'table-uuid': string
+  location?: string
+  'last-updated-ms'?: number
+  'last-column-id'?: number
   schemas: TableSchema[]
   'current-schema-id': number
   'partition-specs': PartitionSpec[]
   'default-spec-id'?: number
+  'last-partition-id'?: number
   'sort-orders': SortOrder[]
   'default-sort-order-id'?: number
   properties: Record<string, string>
   'metadata-location'?: string
   'current-snapshot-id'?: number
-  snapshots?: unknown[]
-  'snapshot-log'?: unknown[]
-  'metadata-log'?: unknown[]
-  refs?: Record<string, unknown>
-  'last-updated-ms'?: number
-  'last-column-id'?: number
+  snapshots?: Snapshot[]
+  'snapshot-log'?: { 'snapshot-id': number; 'timestamp-ms': number }[]
+  'metadata-log'?: { 'metadata-file': string; 'timestamp-ms': number }[]
+  refs?: Record<string, SnapshotReference>
   'last-sequence-number'?: number
-  'table-uuid'?: string
-  'format-version'?: number
-  'last-partition-id'?: number
+  'next-row-id'?: number
+  statistics?: StatisticsFile[]
+  'partition-statistics'?: PartitionStatisticsFile[]
+  'encryption-keys'?: EncryptedKey[]
+  /** Optional name field returned by some catalogs */
+  name?: string
+}
+
+export interface StorageCredential {
+  prefix: string
+  config: Record<string, string>
 }
 
 export interface CreateNamespaceRequest {
@@ -271,28 +553,99 @@ export interface CreateNamespaceResponse {
 
 export interface GetNamespaceResponse {
   namespace: string[]
-  properties: Record<string, string>
+  properties?: Record<string, string> | null
+}
+
+export interface UpdateNamespacePropertiesRequest {
+  removals?: string[]
+  updates?: Record<string, string>
+}
+
+export interface UpdateNamespacePropertiesResponse {
+  updated: string[]
+  removed: string[]
+  missing?: string[] | null
 }
 
 export interface ListNamespacesResponse {
-  namespaces: string[][]
-  'next-page-token'?: string
+  namespaces?: string[][]
+  'next-page-token'?: string | null
 }
 
 export interface ListTablesResponse {
-  identifiers: TableIdentifier[]
-  'next-page-token'?: string
+  identifiers?: TableIdentifier[]
+  'next-page-token'?: string | null
 }
 
+/**
+ * Spec-aligned LoadTableResult (named LoadTableResponse here for backward compat).
+ * Returned by GET /tables/{t}, POST /tables, and POST /tables/{t} (commit).
+ */
 export interface LoadTableResponse {
-  'metadata-location': string
   metadata: TableMetadata
+  'metadata-location'?: string
   config?: Record<string, string>
+  'storage-credentials'?: StorageCredential[]
 }
+
+export type LoadTableResult = LoadTableResponse
 
 export interface CommitTableResponse {
   'metadata-location': string
   metadata: TableMetadata
+}
+
+/**
+ * Catalog configuration as returned by GET /v1/config?warehouse=...
+ *
+ * Servers can use `overrides.prefix` to direct subsequent requests to a
+ * server-specific path prefix (e.g., the warehouse identifier), which is
+ * the recommended pattern over hard-coded `catalogName` configuration.
+ */
+export interface CatalogConfig {
+  defaults: Record<string, string>
+  overrides: Record<string, string>
+  endpoints?: string[]
+  'idempotency-key-lifetime'?: string
+}
+
+/* ===== Method options ===== */
+
+export interface ListNamespacesOptions {
+  parent?: NamespaceIdentifier
+  pageToken?: string
+  pageSize?: number
+}
+
+export interface ListTablesOptions {
+  pageToken?: string
+  pageSize?: number
+}
+
+export interface ListNamespacesResult {
+  namespaces: NamespaceIdentifier[]
+  nextPageToken?: string
+}
+
+export interface ListTablesResult {
+  identifiers: TableIdentifier[]
+  nextPageToken?: string
+}
+
+export interface LoadTableOptions {
+  /** ETag value from a previous response; server returns 304 (and we return null) if unchanged. */
+  ifNoneMatch?: string
+  /**
+   * Which snapshots the server should include in the returned metadata.
+   * - `'all'`: return every snapshot currently valid for the table
+   * - `'refs'`: only snapshots referenced by branches or tags
+   * Default if omitted is `'all'` per spec.
+   */
+  snapshots?: 'all' | 'refs'
+}
+
+export interface LoadTableResultWithEtag extends LoadTableResponse {
+  etag: string | null
 }
 
 /**
