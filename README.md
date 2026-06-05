@@ -56,26 +56,27 @@ npm install iceberg-js
 
 ## Migrating from 0.x to 1.0
 
-The 1.0 release aligns the client with the [Apache Iceberg REST Catalog OpenAPI spec](https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml). The breaking changes are limited to the listing methods and the `updateTable` body shape.
+The 1.0 release aligns the client with the [Apache Iceberg REST Catalog OpenAPI spec](https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml). Breaking changes are limited to the listing methods, the `updateTable` body shape, and the `accessDelegation` flow (use the new `loadTableResult` / `createTableResult` to receive vended credentials).
+
+**See [`MIGRATION.md`](./MIGRATION.md) for full before / after code blocks for every change.** The cheat sheet:
 
 | Before (0.x)                                                                 | After (1.0)                                                                                                                                                                  |
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `await catalog.listNamespaces()` returns `NamespaceIdentifier[]`             | returns `{ namespaces: NamespaceIdentifier[]; nextPageToken? }`                                                                                                              |
 | `await catalog.listNamespaces({ namespace: ['x'] })` (parent)                | `await catalog.listNamespaces({ parent: { namespace: ['x'] } })`                                                                                                             |
 | `await catalog.listTables({ namespace: ['x'] })` returns `TableIdentifier[]` | returns `{ identifiers: TableIdentifier[]; nextPageToken? }`                                                                                                                 |
-| `updateTable({ properties: { … } })`                                         | `updateTable({ updates: [{ action: 'set-properties', updates: { … } }] })`                                                                                                   |
+| `updateTable({ properties: { … } })`                                         | `updateTable({ requirements: [], updates: [{ action: 'set-properties', updates: { … } }] })`                                                                                 |
 | `catalogName` builds the path manually as `/v1/<name>/...`                   | `warehouse` (or `catalogName` as alias) goes through `GET /v1/config` and uses the server-returned `prefix`. Closes [#32](https://github.com/supabase/iceberg-js/issues/32). |
+| `loadTable(id)` returned credentials inline when `accessDelegation` was set  | `loadTableResult(id)` returns credentials + config + ETag; `loadTable(id)` returns bare `TableMetadata`                                                                      |
 | Supported Node 18+                                                           | Now requires Node 22+ (Node 18 and 20 are EOL or near-EOL). Drop in [#46](https://github.com/supabase/iceberg-js/pull/46).                                                   |
 
-Non-breaking additions:
+Non-breaking additions in 1.0:
 
 - `Idempotency-Key` is automatically emitted on every POST/DELETE mutation.
 - `loadTable(id, { ifNoneMatch })` enables conditional GETs (returns `null` on 304).
 - `loadTable(id, { snapshots: 'all' | 'refs' })` controls how many snapshots the server includes.
-- `loadTableResult(id, options?)` returns the full spec-shaped `LoadTableResult` plus the response `ETag`.
-- `createTableResult(namespace, request)` mirror — returns the full spec-shaped `LoadTableResult` (so `accessDelegation: ['vended-credentials']` callers can read the server-vended credentials).
-- `registerTable(namespace, request)` and `renameTable(request)` are now exposed.
-- `updateNamespaceProperties` is now exposed.
+- `loadTableResult` / `createTableResult` / `registerTableResult` return the full spec-shaped `LoadTableResult` plus the response `ETag`.
+- `registerTable`, `renameTable`, `updateNamespaceProperties`, `commitTable` (alias for `updateTable`), and `loadConfig` are now exposed.
 - The full `TableUpdate` and `TableRequirement` discriminated unions are exported.
 - Network-level errors (DNS, TLS, offline) now surface as `IcebergError` with `status: 0`, so a single `instanceof IcebergError` check catches every failure mode.
 
