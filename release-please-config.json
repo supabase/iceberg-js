@@ -4,7 +4,8 @@
       "release-type": "node",
       "package-name": "iceberg-js",
       "changelog-path": "CHANGELOG.md",
-      "bump-minor-pre-major": true,
+      "release-as": "1.0.0",
+      "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": false
     }
   }
