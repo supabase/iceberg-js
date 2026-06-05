@@ -43,7 +43,8 @@
 </code><button type="button">Copy</button></pre>
 
 <h2 id="migrating-from-0x-to-10" class="tsd-anchor-link">Migrating from 0.x to 1.0<a href="#migrating-from-0x-to-10" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>The 1.0 release aligns the client with the <a href="https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml">Apache Iceberg REST Catalog OpenAPI spec</a>. The breaking changes are limited to the listing methods and the <code>updateTable</code> body shape.</p>
+<p>The 1.0 release aligns the client with the <a href="https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml">Apache Iceberg REST Catalog OpenAPI spec</a>. Breaking changes are limited to the listing methods, the <code>updateTable</code> body shape, and the <code>accessDelegation</code> flow (use the new <code>loadTableResult</code> / <code>createTableResult</code> to receive vended credentials).</p>
+<p><strong>See <a href="media/MIGRATION.md"><code>MIGRATION.md</code></a> for full before / after code blocks for every change.</strong> The cheat sheet:</p>
 <table>
 <thead>
 <tr>
@@ -66,11 +67,15 @@
 </tr>
 <tr>
 <td><code>updateTable({ properties: { … } })</code></td>
-<td><code>updateTable({ updates: [{ action: 'set-properties', updates: { … } }] })</code></td>
+<td><code>updateTable({ requirements: [], updates: [{ action: 'set-properties', updates: { … } }] })</code></td>
 </tr>
 <tr>
 <td><code>catalogName</code> builds the path manually as <code>/v1/&lt;name&gt;/...</code></td>
 <td><code>warehouse</code> (or <code>catalogName</code> as alias) goes through <code>GET /v1/config</code> and uses the server-returned <code>prefix</code>. Closes <a href="https://github.com/supabase/iceberg-js/issues/32">#32</a>.</td>
+</tr>
+<tr>
+<td><code>loadTable(id)</code> returned credentials inline when <code>accessDelegation</code> was set</td>
+<td><code>loadTableResult(id)</code> returns credentials + config + ETag; <code>loadTable(id)</code> returns bare <code>TableMetadata</code></td>
 </tr>
 <tr>
 <td>Supported Node 18+</td>
@@ -78,15 +83,13 @@
 </tr>
 </tbody>
 </table>
-<p>Non-breaking additions:</p>
+<p>Non-breaking additions in 1.0:</p>
 <ul>
 <li><code>Idempotency-Key</code> is automatically emitted on every POST/DELETE mutation.</li>
 <li><code>loadTable(id, { ifNoneMatch })</code> enables conditional GETs (returns <code>null</code> on 304).</li>
 <li><code>loadTable(id, { snapshots: 'all' | 'refs' })</code> controls how many snapshots the server includes.</li>
-<li><code>loadTableResult(id, options?)</code> returns the full spec-shaped <code>LoadTableResult</code> plus the response <code>ETag</code>.</li>
-<li><code>createTableResult(namespace, request)</code> mirror — returns the full spec-shaped <code>LoadTableResult</code> (so <code>accessDelegation: ['vended-credentials']</code> callers can read the server-vended credentials).</li>
-<li><code>registerTable(namespace, request)</code> and <code>renameTable(request)</code> are now exposed.</li>
-<li><code>updateNamespaceProperties</code> is now exposed.</li>
+<li><code>loadTableResult</code> / <code>createTableResult</code> / <code>registerTableResult</code> return the full spec-shaped <code>LoadTableResult</code> plus the response <code>ETag</code>.</li>
+<li><code>registerTable</code>, <code>renameTable</code>, <code>updateNamespaceProperties</code>, <code>commitTable</code> (alias for <code>updateTable</code>), and <code>loadConfig</code> are now exposed.</li>
 <li>The full <code>TableUpdate</code> and <code>TableRequirement</code> discriminated unions are exported.</li>
 <li>Network-level errors (DNS, TLS, offline) now surface as <code>IcebergError</code> with <code>status: 0</code>, so a single <code>instanceof IcebergError</code> check catches every failure mode.</li>
 </ul>
