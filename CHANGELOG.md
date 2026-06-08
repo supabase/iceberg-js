@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.0](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.8.1...iceberg-js-v1.0.0) (2026-06-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* align with Iceberg REST OpenAPI spec for v1 ([#48](https://github.com/supabase/iceberg-js/issues/48))
+* drop Node 20 support and update dependencies ([#46](https://github.com/supabase/iceberg-js/issues/46))
+
+### Features
+
+* align with Iceberg REST OpenAPI spec for v1 ([#48](https://github.com/supabase/iceberg-js/issues/48)) ([943aaf3](https://github.com/supabase/iceberg-js/commit/943aaf370c626c5e6aebd0f38ebddcee1838fe39))
+* drop Node 20 support and update dependencies ([#46](https://github.com/supabase/iceberg-js/issues/46)) ([4684bfe](https://github.com/supabase/iceberg-js/commit/4684bfe547cb92696d567c2239747949c1358c14))
+
+
+### Bug Fixes
+
+* use kebab-case to align with spec ([#30](https://github.com/supabase/iceberg-js/issues/30)) ([9cdc009](https://github.com/supabase/iceberg-js/commit/9cdc009210bba523ae2442a70641c5f0246cd37f))
+
 ## [0.8.1](https://github.com/supabase/iceberg-js/compare/iceberg-js-v0.8.0...iceberg-js-v0.8.1) (2025-11-28)
 
 ### Bug Fixes
